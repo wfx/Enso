@@ -1,3 +1,12 @@
+# Untracked folder/files:
+/foo
+
+/tree/**/*
+!/tree/**/
+!/tree/**/pkgsrc.sh
+!/tree/**/post_install.sh
+!/tree/**/post_uninstall.sh
+
 # Object files
 *.o
 *.ko
