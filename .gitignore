@@ -6,6 +6,8 @@
 !/tree/**/pkgsrc.sh
 !/tree/**/post_install.sh
 !/tree/**/post_uninstall.sh
+/tree/git/*
+
 
 # Object files
 *.o
