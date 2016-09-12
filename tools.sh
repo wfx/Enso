@@ -29,13 +29,17 @@ msg() {
   local cols=$(tput cols)
   case $1 in
     "h1")
+      printf '%s%*s\n' "${color_green}" "$cols" | tr ' ' \-
+      printf "%s\n" "${2^^}"
+      printf '%*s\n' "$cols" | tr ' ' \-
+      ;;
+    "h2")
       printf -v tmp '%*s' "$cols"
       printf -v tmp '%s' "${tmp// /_}"
       printf "%s %s\n" "${color_green}${2^^}" "${tmp:${#2}+1}"
-      tmp=""
+      unset tmp
       ;;
-    "h2") printf "\t%s\n" "${color_green}${2}" ;;
-    "hr") printf '%*s\n' "$cols" | tr ' ' \* ;;
+    "hr") printf '%*s\n' "$cols" | tr ' ' \- ;;
     "txt") printf "\t%s\n" "${2}" ;;
     "warn") printf "\t%s\n" "${color_red}${2}" ;;
     "note") printf "\t%s\n" "${color_orange}${2}" ;;

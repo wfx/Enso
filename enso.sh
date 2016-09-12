@@ -18,40 +18,45 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-load_package_tree() {
-  # load package_tree.conf
-  # defined available packages and the tree/path to pkgsrc.sh
-  id=0
-  msg "note" "load package_tree.conf"
-  exec 3<"package_tree.conf"
+load_package_conf() {
+  # load package.conf
+  # defined available packages in build order:
+  # 0;efl;tree/enlightenment/rel/libs/efl;install
+  # ...
+
+  msg "note" "load package.conf"
+  exec 3<"package.conf"
   while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
-      # get index and seek
+      # get build index and seek
       i=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-      # get tree (path), next line
-      t=${var%%;*};
+      # get name and seek
+      n=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+      # get tree (path) and seek
+      t=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+      # process action, next line
+      a=${var%%;*};
+      package_name[${i}]="${n}"
       package_tree[${i}]="${t}"
+      package_action[${i}]="${a}"
   done
-  msg "txt" "load done."
+  msg "txt" "loading done."
 }
 
-load_process_list() {
-  # load process_list.conf
-  # efl,python-efl,enlightenment and terminology marked to install
-  # options for each package are "install", "uninstall" or "" to do nothing
-  msg "note" "load package_tree.conf"
-  exec 3<"process_list.conf"
-  while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
-      # get index and seek
-      i=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-      # get process, next line
-      p=${var%%;*};
-      process_list[${i}]="${p}"
+
+package_processing() {
+  msg "h1" "Processing..."
+  for i in "${!package_name[@]}"; do
+    if [[ "${package_action[$i]}" == "none" ]]; then
+      msg "note" "nothing todo for: ${package_name[$i]}"
+    else
+      "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" "${package_action[$i]}"
+    fi
   done
-  msg "txt" "load done."
+  msg "txt" "all done"
 }
 
 set_distribution() {
-  # need this to install dependings (base devel, libs etc)
+  # to install dependings (base devel, libs etc)
   case $1 in
     "archlinux") distribution="archlinux" ;;
     "antergos") distribution="archlinux" ;;
@@ -61,17 +66,7 @@ set_distribution() {
   esac
   if [[ $distribution == "" ]]; then
     #TODO: autodetection
-    echo "TODO: Autodetecting distribution"
-  fi
-}
-
-set_process_list() {
-  if [[ $1 == "prepared" ]]; then
-    load_process_list
-    list_type="prepared"
-  elif [[ $1 == "edit" ]]; then
-    echo "edit process list"
-    list_type="edited"
+    msg "txt" "TODO: Autodetecting distribution"
   fi
 }
 
@@ -95,7 +90,7 @@ menu_set_distribution() {
   menu_main
 }
 
-menu_set_process_list() {
+menu_set_package_action() {
   clear
   msg "hr"
   msg "h1" "Enso: Enlightenment Software"
@@ -105,8 +100,8 @@ menu_set_process_list() {
   local options=("Prepared" "Edit")
   select opt in "${options[@]}" "Quit"; do
      case "$REPLY" in
-       1 ) set_process_list "prepared"; break ;;
-       2 ) set_process_list "edit"; break ;;
+       1 ) set_package_action "prepared"; break ;;
+       2 ) set_package_action "edit"; break ;;
        $(( ${#options[@]}+1 )) ) break ;;
        *) echo "Invalid option. Try another one.";continue;;
     esac
@@ -115,24 +110,24 @@ menu_set_process_list() {
 }
 
 menu_install() {
-  for i in "${!process_list[@]}"; do
-    echo "Processing: ${package_tree[$i]} ${process_list[$i]}"
+  for i in "${!package_action[@]}"; do
+    echo "Processing: ${package_tree[$i]} ${package_action[$i]}"
   done
 }
 
 menu_main() {
   clear
-  msg "hr"
   msg "h1" "Enso: Enlightenment Software"
   PS3="Select: "
   printf "Distribution:\t%s\n" "${distribution}"
-  printf "Process list:\t%s\n" "${list_type}"
+  msg "hr"
   msg "h2" "Main menu"
+  echo ""
   local options=("Set Distribution" "Set Process list" "Install")
   select opt in "${options[@]}" "Quit"; do
      case "$REPLY" in
        1 ) menu_set_distribution ;;
-       2 ) menu_set_process_list ;;
+       2 ) menu_set_package_action ;;
        3 ) menu_install ;;
        $(( ${#options[@]}+1 )) ) break ;;
        *) echo "Invalid option. Try another one.";continue;;
@@ -140,37 +135,36 @@ menu_main() {
   done
 }
 
-list_package() {
-  msg "hr"
+
+list_package_conf() {
   msg "h1" "Available packages"
-  for i in "${!process_list[@]}"; do
-    printf "%s => %s => %s\n" "$i" "${process_list[$i]}" "${package_tree[$i]}"
+  for i in "${!package_name[@]}"; do
+    printf "%s => %s => %s => %s\n" "${i}" "${package_name[$i]}" "${package_tree[$i]}" "${package_action[$i]}"
   done
 }
 
 # ===========================================================================
 
 [[ $ENSO_HOME ]] || export ENSO_HOME=$(pwd)
-
 . $ENSO_HOME/tools.sh
 
-declare -A package_tree
-declare -A process_list
+declare -a package_name
+declare -a package_tree
+declare -a package_action
 
-set_distribution ""
-load_package_tree
-set_process_list "prepared"
+load_package_conf
+#list_package_conf
 
 # ===========================================================================
 
-# The order is important and not the same as in the file(process_list.conf)?
-# list_package
-# --------------------------------------------------------------------------
-
 #menu_main
 
-# until menu is finish: enso.sh efl
-$ENSO_HOME/${package_tree[$1]}/pkgsrc.sh ${process_list[$1]}
+# until menu is finish (edit package.conf):
+# enter all package in the compiling order
+# 0;NAME;TREE TO PKGSRC.SH;install uninstall or none action
+# >enso.sh
+
+package_processing
 
 unset ENSO_HOME
 exit
