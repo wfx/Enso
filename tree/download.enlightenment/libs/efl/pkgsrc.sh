@@ -17,7 +17,7 @@ pkg_source[user]=""                                    # if you have a username 
 
 cfg_prepare[prefix]="/usr/local"                       # prefix default is /usr/local
 cfg_prepare[cflags]="-O2 -ffast-math -march=native -g -ggdb3"  # optional cflags
-cfg_prepare[options]=""                                # optionial configure settings TODO: maybe go back to regex here the prefix
+cfg_prepare[options]="--enable-systemd"                # optionial configure settings TODO: maybe go back to regex here the prefix
 # ==================================================== #
 
 . ${ENSO_HOME}/processing.sh

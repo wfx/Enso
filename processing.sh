@@ -38,7 +38,7 @@ init() {
           msg "txt" "archive $_filename exist"
         else
           msg "txt" "download archive... "
-          wget -q --show-progress ${pkg_source[url]}
+          wget -q --show-progress ${pkg_source[url]}  && msg "done: $?"  || exit_error "$?"
           _srcdir=$(bsdtar -tf $_filename | head -1 | cut -f1 -d "/")   # getting foldername from archive
           msg "txt" "done"
       fi
@@ -46,12 +46,12 @@ init() {
           msg "txt" "archive folder exist"
         else
           msg "txt" "extract archive... "
-          bsdtar -xf $_filename
+          bsdtar -xf $_filename  && msg "done: $?"  || exit_error "$?"
           msg "txt" "done"
       fi
       ;;
     "git" )
-      msg "alert" "git source not yet implemented!"
+      msg "warn" "git source not yet implemented!"
       exit
       ;;
   esac
@@ -111,7 +111,7 @@ patch() {
   if [ -f "pkg.patch" ]
     then
       msg "h2" "processing... "
-      patch -p0 -i $_scriptdir/pkg.patch
+      patch -p0 -i $_scriptdir/pkg.patch  && msg "done: $?"  || exit_error "$?"
       msg "txt" "done"
     else
       msg "txt" "nothing to patch."
@@ -130,13 +130,13 @@ build() {
         then
           if [ -f "autogen.sh" ]
             then
-               ./autogen.sh
+               ./autogen.sh  && msg "done: $?"  || exit_error "$?"
           elif [ -f "configure" ]
             then
-               ./configure ${cfg_prepare[options]}
+               ./configure ${cfg_prepare[options]}  && msg "done: $?"  || exit_error "$?"
           fi
         else
-          msg "alert" "can not find autogen.sh or configure.sh script?!"
+          msg "warn" "can not find autogen.sh or configure.sh script?!"
           if [ "${opt_enso[ignore_all]}" == "no" ]
             then
               msg "txt" "to ignore this, set \$opt_enso[ignore_all]=\"yes\""
@@ -146,7 +146,7 @@ build() {
           fi
       fi
       msg "h2" "make"
-       make
+      make  && msg "done: $?"  || exit_error "$?"
       ;;
     "python")
       msg "quote_python"
@@ -166,10 +166,11 @@ install() {
   msg "txt" "processing... "
   case "${pkg_source[language]}" in
     "c")
-       sudo make install
+       sudo make install  && msg "done: $?"  || exit_error "$?"
       ;;
     "python")
-      sudo python3 setup.py install # --prefix="${cfg_prepare[prefix]}" ....i have trouble with pkgconfig
+      sudo python3 setup.py install  && msg "done: $?"  || exit_error "$?"
+      # --prefix="${cfg_prepare[prefix]}" ....i have trouble with pkgconfig
       ;;
     *)
       msg "w" "${pkg_source[language]} is not supported: running install.sh"
@@ -187,8 +188,7 @@ post_install() {
     then
       msg "txt" "found..."
       # shellcheck source=/dev/null
-      . $_scriptdir/post_install.sh
-      msg "txt" "done"
+      . $_scriptdir/post_install.sh  && msg "done: $?"  || exit_error "$?"
     else
       msg "txt" "nothing todo"
   fi
@@ -201,13 +201,13 @@ uninstall() {
   msg "processing... "
   case ${pkg_source[language]} in
     c)
-       sudo make uninstall
+       sudo make uninstall && msg "done: $?"  || exit_error "$?"
       ;;
     python)
-       sudo python setup.py uninstall
+       sudo python setup.py uninstall && msg "done: $?"  || exit_error "$?"
       ;;
     *)
-      msg "alert" "${pkg_source[language]} is not supported: running install.sh"
+      msg "warn" "${pkg_source[language]} is not supported: running install.sh"
       # TODO: if . $_scriptdir/install.sh || exit
       exit
       ;;
@@ -222,7 +222,7 @@ post_uninstall() {
     then
       msg "txt" "found... "
       # shellcheck source=/dev/null
-      . $_scriptdir/post_uninstall.sh
+      . $_scriptdir/post_uninstall.sh && msg "done: $?"  || exit_error "$?"
       msg "txt" "done"
     else
       msg "txt" "nothing todo"
@@ -230,6 +230,13 @@ post_uninstall() {
   msg "txt" "post uninstall... done"
 }
 
+exit_error() {
+  # cmd && msg "done: $?"  || exit_error "$?"
+  msg "hr"
+  msg "exit" "$basename $0 error: $1"
+  msg "hr"
+  exit -1
+}
 # =============================================================
 
 . $ENSO_HOME/tools.sh
@@ -255,4 +262,4 @@ else
   msg "h2" "usage"
   msg "note" "call me with: install || uninstall"
 fi
-exit
+exit 0

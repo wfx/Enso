@@ -42,6 +42,7 @@ msg() {
     "hr") printf '%*s\n' "$cols" | tr ' ' \- ;;
     "txt") printf "\t%s\n" "${2}" ;;
     "warn") printf "\t%s\n" "${color_red}${2}" ;;
+    "exit") printf "\t%s\n" "${color_red}${2}" ;;
     "note") printf "\t%s\n" "${color_orange}${2}" ;;
 
     "quote_c") printf "\t%s\n" "${color_blue}C Code!" "One lang to rule them all," "One lang to find them," "One lang to bring them all and into in the enlightenment bind them.";;
