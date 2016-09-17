@@ -21,11 +21,19 @@
 main() {
   _scriptdir=$(dirname $0)                    # the directory of pkg.sh
   _filename=$(basename ${pkg_source[url]})    # filename (whitout url)
+  msg "note" "working directory: $_scriptdir"
+  cd $_scriptdir
   if [[ -f $_filename ]]; then
     _srcdir=$(bsdtar -tf $_filename | head -1 | cut -f1 -d "/")   # getting foldername from archive
   fi
-  cd $_scriptdir
-  msg "note" "$_scriptdir"
+  if [[ -f "stdout.log" ]]; then
+    msg "txt" "remove stdout.log..."
+    run_cmd "rm stdout.log"
+  fi
+  if [[ -f "stderr.log" ]]; then
+    msg "txt" "remove stderr.log..."
+    run_cmd "rm stderr.log"
+  fi
 }
 
 init() {
@@ -38,20 +46,19 @@ init() {
           msg "txt" "archive $_filename exist"
         else
           msg "txt" "download archive... "
-          wget -q --show-progress ${pkg_source[url]}  && msg "done: $?"  || exit_error "$?"
+          # here i dont use run_cmd (want the progess)
+          wget -q --show-progress ${pkg_source[url]} && msg "txt" "done." || guru_meditation "$?"
           _srcdir=$(bsdtar -tf $_filename | head -1 | cut -f1 -d "/")   # getting foldername from archive
-          msg "txt" "done"
       fi
       if [[ -d $_srcdir ]]; then
-          msg "txt" "archive folder exist"
+          msg "txt" "archive folder $_srcdir exist"
         else
           msg "txt" "extract archive... "
           bsdtar -xf $_filename  && msg "done: $?"  || exit_error "$?"
-          msg "txt" "done"
       fi
       ;;
     "git" )
-      msg "warn" "git source not yet implemented!"
+      msg "alert" "git source not yet implemented!"
       exit
       ;;
   esac
@@ -63,10 +70,10 @@ init() {
 prepare() {
   msg "hr"
   msg "h1" "prepare"
-  msg "h2" "build environment"
+  msg "h2" "check environment"
   if [ -z "${cfg_prepare[prefix]}" ]
     then
-      msg "warn" "prefix is not defined"
+      msg "alert" "prefix is not defined"
     else
       msg "h2" "check for prefix in PATH..."
       if [[ "$PATH" == ?(*:)"${cfg_prepare[prefix]}/bin"?(:*) ]]
@@ -94,7 +101,7 @@ prepare() {
       fi
   fi
 
-  msg "h2" "check for CFLAGS... "
+  msg "h2" "check for CFLAGS..."
   if [ -z "${cfg_prepare[cflags]}" ]
     then
       msg "txt" "is set"
@@ -102,7 +109,6 @@ prepare() {
       msg "txt" "set: CFLAGS to ${cfg_prepare[cflags]}"
       export CFLAGS="${cfg_prepare[cflags]}"
   fi
-  msg "txt" "prepare... done"
 }
 
 patch() {
@@ -110,19 +116,17 @@ patch() {
   msg "h1" "patch"
   if [ -f "pkg.patch" ]
     then
-      msg "h2" "processing... "
-      patch -p0 -i $_scriptdir/pkg.patch  && msg "done: $?"  || exit_error "$?"
-      msg "txt" "done"
+      msg "h2" "processing..."
+      #patch -p0 -i $_scriptdir/pkg.patch  && msg "done: $?"  || exit_error "$?"
+      run_cmd "patch -p0 -i $_scriptdir/pkg.patch"
     else
       msg "txt" "nothing to patch."
   fi
-  msg "txt" "patch... done"
 }
 
 build() {
   msg "hr"
   msg "h1" "build"
-  msg "h2" "configure source..."
   case "${pkg_source[language]}" in
     "c")
       msg "quote_c"
@@ -130,113 +134,111 @@ build() {
         then
           if [ -f "autogen.sh" ]
             then
-               ./autogen.sh  && msg "done: $?"  || exit_error "$?"
-          elif [ -f "configure" ]
+              msg "h2" "autogen..."
+              #./autogen.sh  && msg "done: $?"  || exit_error "$?"
+              run_cmd "./autogen.sh"
+            fi
+          if [ -f "configure" ]
             then
-               ./configure ${cfg_prepare[options]}  && msg "done: $?"  || exit_error "$?"
+              msg "h2" "configure..."
+              #./configure ${cfg_prepare[options]}  && msg "done: $?"  || exit_error "$?"
+              run_cmd "./configure ${cfg_prepare[options]}"
           fi
         else
-          msg "warn" "can not find autogen.sh or configure.sh script?!"
+          msg "alert" "can not find autogen.sh or configure.sh script?!"
           if [ "${opt_enso[ignore_all]}" == "no" ]
             then
               msg "txt" "to ignore this, set \$opt_enso[ignore_all]=\"yes\""
               exit
             else
-              msg "warn" "i have to ignore it"
+              msg "alert" "i have to ignore it"
           fi
       fi
-      msg "h2" "make"
-      make  && msg "done: $?"  || exit_error "$?"
+      msg "h2" "make..."
+      #make  && msg "done: $?"  || exit_error "$?"
+      run_cmd "make"
       ;;
     "python")
       msg "quote_python"
       ;;
     *)
-      msg "warn" "${pkg_source[language]} is not supported: running build.sh"
-      # TODO: if . $_scriptdir/build.sh || exit
-      exit
+      msg "alert" "${pkg_source[language]} running build.sh"
+      run_cmd "$_scriptdir/build.sh"
       ;;
   esac
-  msg "txt" "build... done"
 }
 
 install() {
   msg "hr"
-  msg "h2" "install"
-  msg "txt" "processing... "
+  msg "h1" "install"
   case "${pkg_source[language]}" in
     "c")
-       sudo make install  && msg "done: $?"  || exit_error "$?"
+      #sudo make install  && msg "done: $?"  || exit_error "$?"
+      run_cmd "sudo make install"
       ;;
     "python")
-      sudo python3 setup.py install  && msg "done: $?"  || exit_error "$?"
-      # --prefix="${cfg_prepare[prefix]}" ....i have trouble with pkgconfig
+      #sudo python3 setup.py install  && msg "done: $?"  || exit_error "$?"
+      # --prefix="${cfg_prepare[prefix]}" ....i have trouble with pkgconfig :/ ?
+      run_cmd "sudo python3 setup.py install"
       ;;
     *)
-      msg "w" "${pkg_source[language]} is not supported: running install.sh"
-      # TODO: if . $_scriptdir/install.sh || exit
-      exit
+      msg "alert" "${pkg_source[language]} running install.sh"
+      run_cmd "$_scriptdir/install.sh"
       ;;
   esac
-  msg "txt" "install... done"
 }
 
 post_install() {
-  msg "hr"
-  msg "h2" "post install"
+  msg "h2" "post install..."
   if [ -f "post_install.sh" ]
     then
       msg "txt" "found..."
       # shellcheck source=/dev/null
-      . $_scriptdir/post_install.sh  && msg "done: $?"  || exit_error "$?"
+      #. $_scriptdir/post_install.sh  && msg "done: $?"  || exit_error "$?"
+      run_cmd "$_scriptdir/post_install.sh"
     else
       msg "txt" "nothing todo"
   fi
-  msg "txt" "post install... done"
 }
 
 uninstall() {
-  msg "hr"
-  msg "h2" "uninstall"
-  msg "processing... "
+  msg "h1" "uninstall"
   case ${pkg_source[language]} in
     c)
-       sudo make uninstall && msg "done: $?"  || exit_error "$?"
+      #sudo make uninstall && msg "done: $?"  || exit_error "$?"
+      run_cmd "sudo make uninstall"
       ;;
     python)
-       sudo python setup.py uninstall && msg "done: $?"  || exit_error "$?"
+      #sudo python setup.py uninstall && msg "done: $?"  || exit_error "$?"
+      run_cmd "sudo python setup.py uninstall"
       ;;
     *)
-      msg "warn" "${pkg_source[language]} is not supported: running install.sh"
-      # TODO: if . $_scriptdir/install.sh || exit
-      exit
+      msg "alert" "${pkg_source[language]} running uninstall.sh"
+      run_cmd "$_scriptdir/uninstall.sh"
       ;;
   esac
-  msg "txt" "uninstall... done"
 }
 
 post_uninstall() {
-  msg "hr"
-  msg "txt" "processing... "
+  msg "h2" "post uninstall..."
   if [[ -f "post_uninstall.sh" ]]
     then
       msg "txt" "found... "
       # shellcheck source=/dev/null
-      . $_scriptdir/post_uninstall.sh && msg "done: $?"  || exit_error "$?"
-      msg "txt" "done"
+      #. $_scriptdir/post_uninstall.sh && msg "done: $?"  || exit_error "$?"
+      run_cmd "$_scriptdir/post_uninstall.sh"
     else
       msg "txt" "nothing todo"
   fi
-  msg "txt" "post uninstall... done"
 }
 
-exit_error() {
-  # cmd && msg "done: $?"  || exit_error "$?"
-  msg "hr"
-  msg "exit" "$basename $0 error: $1"
-  msg "hr"
-  exit -1
-}
+run_cmd() {
+  $1 > $_scriptdir/stdout.log 2> $_scriptdir/stderr.log && msg "txt" "done." || guru_meditation "$?"
+ }
+
+# =============================================================
+# note: using -fx filename?
+# set -x  #debug
 # =============================================================
 
 . $ENSO_HOME/tools.sh
@@ -262,4 +264,5 @@ else
   msg "h2" "usage"
   msg "note" "call me with: install || uninstall"
 fi
+
 exit 0
