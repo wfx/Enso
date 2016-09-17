@@ -1,1 +1,9 @@
 */
+*
+!pkgsrc.sh
+!patch.sh
+!build.sh
+!install.sh
+!post_install.sh
+!uninstall.sh
+!post_uninstall.sh
