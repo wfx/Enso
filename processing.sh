@@ -56,8 +56,16 @@ init() {
       fi
       ;;
     "git" )
-      msg "alert" "git source not yet implemented!"
-      exit
+      msg "alert" "git source!"
+      _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
+      _srcdir=${_srcdir#"./"}
+      if [[ -d $_srcdir ]]; then
+        msg "txt" "found directoy $_srcdir"
+      else
+        git clone ${pkg_source[url]}
+        _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
+        _srcdir=${_srcdir#"./"}
+      fi
       ;;
   esac
   msg "txt" "change to $_srcdir directory"
@@ -173,6 +181,7 @@ install() {
     "python")
       #sudo python3 setup.py install  && msg "done: $?"  || exit_error "$?"
       # --prefix="${cfg_prepare[prefix]}" ....i have trouble with pkgconfig :/ ?
+      run_cmd "git checkout ${pkg_source[release]}"
       run_cmd "sudo python3 setup.py install"
       ;;
     *)
