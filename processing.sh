@@ -21,23 +21,21 @@
 main() {
   _scriptdir=$(dirname $0)                    # the directory of pkg.sh
   _filename=$(basename ${pkg_source[url]})    # filename (whitout url)
-  msg "note" "working directory: $_scriptdir"
+  msg "h2" "Setup"
+  msg "note" "working directory: \n$_scriptdir"
   cd $_scriptdir
   if [[ -f $_filename ]]; then
     _srcdir=$(bsdtar -tf $_filename | head -1 | cut -f1 -d "/")   # getting foldername from archive
   fi
   if [[ -f "stdout.log" ]]; then
-    msg "txt" "remove stdout.log..."
     run_cmd "rm stdout.log"
   fi
   if [[ -f "stderr.log" ]]; then
-    msg "txt" "remove stderr.log..."
     run_cmd "rm stderr.log"
   fi
 }
 
 init() {
-  msg "hr"
   msg "h1" "init"
   msg "h2" "getting ${pkg_source[package]} source"
   case "${pkg_source[package]}" in
@@ -47,14 +45,14 @@ init() {
         else
           msg "txt" "download archive... "
           # here i dont use run_cmd (want the progess)
-          wget -q --show-progress ${pkg_source[url]} && msg "txt" "done." || guru_meditation "$?"
+          wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || guru_meditation "$?"
           _srcdir=$(bsdtar -tf $_filename | head -1 | cut -f1 -d "/")   # getting foldername from archive
       fi
       if [[ -d $_srcdir ]]; then
-          msg "txt" "archive folder $_srcdir exist"
+          msg "txt" "found directory $_srcdir"
         else
-          msg "txt" "extract archive... "
-          bsdtar -xf $_filename  && msg "done: $?"  || exit_error "$?"
+          #bsdtar -xf $_filename  && msg "done: $?"  || exit_error "$?"
+          run_cmd "bsdtar -xf $_filename"
       fi
       ;;
     "git" )
@@ -68,7 +66,6 @@ init() {
 }
 
 prepare() {
-  msg "hr"
   msg "h1" "prepare"
   msg "h2" "check environment"
   if [ -z "${cfg_prepare[prefix]}" ]
@@ -78,7 +75,7 @@ prepare() {
       msg "h2" "check for prefix in PATH..."
       if [[ "$PATH" == ?(*:)"${cfg_prepare[prefix]}/bin"?(:*) ]]
         then
-          msg "txt" "is set"
+          msg "txt" "prefix is set"
         else
           msg "txt" "set: ${cfg_prepare["prefix"]}/bin"
           export PATH="${cfg_prepare["prefix"]}/bin:$PATH"
@@ -86,7 +83,7 @@ prepare() {
       msg "h2" "check for prefix in PKG_CONFIG_PATH..."
       if [[ "$PKG_CONFIG_PATH" == ?(*:)"${cfg_prepare["prefix"]}/lib/pkgconfig"?(:*) ]]
         then
-          msg "txt" "is set"
+          msg "txt" "PKG_CONFIG_PATH is set"
         else
           msg "txt" "set: ${cfg_prepare["prefix"]}/lib/pkgconfig"
           export PKG_CONFIG_PATH="${cfg_prepare["prefix"]}/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -94,7 +91,7 @@ prepare() {
       msg "h2" "check for prefix in LD_LIBRARY_PATH..."
       if [[ "$LD_LIBRARY_PATH" == ?(*:)"${cfg_prepare[prefix]}/lib"?(:*) ]]
         then
-          msg "txt" "is set"
+          msg "txt" "LD_LIBRARY_PATH is set"
         else
           msg "txt" "set: ${cfg_prepare[prefix]}/lib"
           export LD_LIBRARY_PATH="${cfg_prepare[prefix]}/lib:$LD_LIBRARY_PATH"
@@ -104,7 +101,7 @@ prepare() {
   msg "h2" "check for CFLAGS..."
   if [ -z "${cfg_prepare[cflags]}" ]
     then
-      msg "txt" "is set"
+      msg "txt" "CFLAGS is set"
     else
       msg "txt" "set: CFLAGS to ${cfg_prepare[cflags]}"
       export CFLAGS="${cfg_prepare[cflags]}"
@@ -112,7 +109,6 @@ prepare() {
 }
 
 patch() {
-  msg "hr"
   msg "h1" "patch"
   if [ -f "pkg.patch" ]
     then
@@ -125,7 +121,6 @@ patch() {
 }
 
 build() {
-  msg "hr"
   msg "h1" "build"
   case "${pkg_source[language]}" in
     "c")
@@ -169,7 +164,6 @@ build() {
 }
 
 install() {
-  msg "hr"
   msg "h1" "install"
   case "${pkg_source[language]}" in
     "c")
@@ -233,7 +227,7 @@ post_uninstall() {
 }
 
 run_cmd() {
-  $1 > $_scriptdir/stdout.log 2> $_scriptdir/stderr.log && msg "txt" "done." || guru_meditation "$?"
+  $1 > $_scriptdir/stdout.log 2> $_scriptdir/stderr.log && msg "txt" "${1}... passed" || guru_meditation "$?"
  }
 
 # =============================================================
@@ -244,7 +238,6 @@ run_cmd() {
 . $ENSO_HOME/tools.sh
 
 clear
-msg "hr"
 msg "h1" "${pkg_source[description]}"
 
 main         # main things
