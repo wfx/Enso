@@ -23,23 +23,21 @@ load_package_conf() {
   # defined available packages in build order:
   # 0;efl;tree/enlightenment/rel/libs/efl;install
   # ...
-
-  msg "note" "load package.conf"
+  msg "h1" "load package configuration"
   exec 3<"package.conf"
   while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
-      # get build index and seek
-      i=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-      # get name and seek
-      n=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-      # get tree (path) and seek
-      t=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-      # process action, next line
-      a=${var%%;*};
-      package_name[${i}]="${n}"
-      package_tree[${i}]="${t}"
-      package_action[${i}]="${a}"
+    # get build index and seek
+    i=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    # get name and seek
+    n=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    # get tree (path) and seek
+    t=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    # process action, next line
+    a=${var%%;*};
+    package_name[${i}]="${n}"
+    package_tree[${i}]="${t}"
+    package_action[${i}]="${a}"
   done
-  msg "txt" "loading done."
 }
 
 
@@ -49,10 +47,10 @@ package_processing() {
     if [[ "${package_action[$i]}" == "none" ]]; then
       msg "note" "nothing todo for: ${package_name[$i]}"
     else
+      msg "h2" "Process ${package_name[$i]}"
       "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" "${package_action[$i]}"
     fi
   done
-  msg "txt" "all done"
 }
 
 set_distribution() {
@@ -163,7 +161,7 @@ load_package_conf
 # enter all package in the compiling order
 # 0;NAME;TREE TO PKGSRC.SH;install uninstall or none action
 # >enso.sh
-
+msg "h1" "Processing all packages"
 package_processing
 
 unset ENSO_HOME

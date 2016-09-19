@@ -19,14 +19,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 main() {
-  _scriptdir=$(dirname $0)                    # the directory of pkg.sh
-  _filename=$(basename ${pkg_source[url]})    # filename (whitout url)
-  msg "h2" "Setup"
-  msg "note" "working directory: \n$_scriptdir"
-  cd $_scriptdir
-  if [[ -f $_filename ]]; then
-    _srcdir=$(bsdtar -tf $_filename | head -1 | cut -f1 -d "/")   # getting foldername from archive
-  fi
+  # Prepare working directory
+  # Removing old log files
+  msg "h1" "main"
+  _scriptdir=$(dirname $0) # main working directory
+  run_cmd "cd $_scriptdir"
   if [[ -f "stdout.log" ]]; then
     run_cmd "rm stdout.log"
   fi
@@ -36,47 +33,46 @@ main() {
 }
 
 init() {
+  # Source Directoy:
+  # Use existing one or get the source (archive or git)
   msg "h1" "init"
-  msg "h2" "getting ${pkg_source[package]} source"
-  case "${pkg_source[package]}" in
-    "archive" )
-      if [[ -f $_filename ]]; then
-          msg "txt" "archive $_filename exist"
+  msg "h2" "${pkg_source[package]} source directory"
+  _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
+  _srcdir=${_srcdir#"./"}
+  if [[ -d $_srcdir ]]; then
+    msg "txt" "found directoy $_srcdir"
+  else
+    case "${pkg_source[package]}" in
+      "archive" )
+        if [[ -f $(basename ${pkg_source[url]}) ]]; then # filename (whitout url)
+          msg "txt" "found archive $_filename"
         else
           msg "txt" "download archive... "
-          # here i dont use run_cmd (want the progess)
-          wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || guru_meditation "$?"
-          _srcdir=$(bsdtar -tf $_filename | head -1 | cut -f1 -d "/")   # getting foldername from archive
-      fi
-      if [[ -d $_srcdir ]]; then
-          msg "txt" "found directory $_srcdir"
+          wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || msg "guru_meditation" "$?" # want the progess
+        fi
+        run_cmd "bsdtar -xf $_filename"
+        ;;
+      "git" )
+        if [[ -z ${pkg_source[release]} ]]; then
+          msg "txt" "git clone $(basename ${pkg_source[url]}) branch ${pkg_source[release]}"
+          run_cmd "git clone ${pkg_source[url]}"
         else
-          #bsdtar -xf $_filename  && msg "done: $?"  || exit_error "$?"
-          run_cmd "bsdtar -xf $_filename"
-      fi
-      ;;
-    "git" )
-      msg "alert" "git source!"
-      _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
-      _srcdir=${_srcdir#"./"}
-      if [[ -d $_srcdir ]]; then
-        msg "txt" "found directoy $_srcdir"
-      else
-        git clone ${pkg_source[url]}
-        _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
-        _srcdir=${_srcdir#"./"}
-      fi
-      ;;
-  esac
-  msg "txt" "change to $_srcdir directory"
-  cd $_srcdir
-  msg "txt" "init... done"
+          msg "txt" "git clone $(basename ${pkg_source[url]})"
+          run_cmd "git clone --branch ${pkg_source[release]} ${pkg_source[url]}"
+        fi
+        ;;
+    esac
+  fi
+  _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
+  _srcdir=${_srcdir#"./"}
+  run_cmd "cd $_srcdir"
 }
 
 prepare() {
+  # Environment
   msg "h1" "prepare"
   msg "h2" "check environment"
-  if [ -z "${cfg_prepare[prefix]}" ]
+  if [[ -z "${cfg_prepare[prefix]}" ]]
     then
       msg "alert" "prefix is not defined"
     else
@@ -106,11 +102,8 @@ prepare() {
       fi
   fi
 
-  msg "h2" "check for CFLAGS..."
-  if [ -z "${cfg_prepare[cflags]}" ]
+  if [[ -z "${cfg_prepare[cflags]}" ]]
     then
-      msg "txt" "CFLAGS is set"
-    else
       msg "txt" "set: CFLAGS to ${cfg_prepare[cflags]}"
       export CFLAGS="${cfg_prepare[cflags]}"
   fi
@@ -118,10 +111,9 @@ prepare() {
 
 patch() {
   msg "h1" "patch"
-  if [ -f "pkg.patch" ]
+  if [[ -f "patch.sh" ]]
     then
       msg "h2" "processing..."
-      #patch -p0 -i $_scriptdir/pkg.patch  && msg "done: $?"  || exit_error "$?"
       run_cmd "patch -p0 -i $_scriptdir/pkg.patch"
     else
       msg "txt" "nothing to patch."
@@ -133,32 +125,26 @@ build() {
   case "${pkg_source[language]}" in
     "c")
       msg "quote_c"
-      if [[ -f "autogen.sh" ]] || [[ -f "configure" ]]
-        then
-          if [ -f "autogen.sh" ]
-            then
-              msg "h2" "autogen..."
-              #./autogen.sh  && msg "done: $?"  || exit_error "$?"
-              run_cmd "./autogen.sh"
-            fi
-          if [ -f "configure" ]
-            then
-              msg "h2" "configure..."
-              #./configure ${cfg_prepare[options]}  && msg "done: $?"  || exit_error "$?"
-              run_cmd "./configure ${cfg_prepare[options]}"
-          fi
-        else
-          msg "alert" "can not find autogen.sh or configure.sh script?!"
-          if [ "${opt_enso[ignore_all]}" == "no" ]
-            then
-              msg "txt" "to ignore this, set \$opt_enso[ignore_all]=\"yes\""
-              exit
-            else
-              msg "alert" "i have to ignore it"
-          fi
+      if [[ -f "autogen.sh" ]] || [[ -f "configure" ]]; then
+        if [[ -f "autogen.sh" ]]; then
+            msg "h2" "run autogen.sh ..."
+            run_cmd "./autogen.sh"
+        fi
+        if [[ -f "configure" ]]; then
+            msg "h2" "configure ..."
+            run_cmd "./configure ${cfg_prepare[options]}"
+        fi
+      else
+        msg "alert" "can not find autogen.sh or configure.sh script?!"
+        if [ "${opt_enso[ignore_all]}" == "yes" ]
+          then
+            msg "alert" "i have to ignore it"
+          else
+            msg "txt" "to ignore this, set \$opt_enso[ignore_all]=\"yes\""
+            exit
+        fi
       fi
       msg "h2" "make..."
-      #make  && msg "done: $?"  || exit_error "$?"
       run_cmd "make"
       ;;
     "python")
@@ -175,13 +161,9 @@ install() {
   msg "h1" "install"
   case "${pkg_source[language]}" in
     "c")
-      #sudo make install  && msg "done: $?"  || exit_error "$?"
       run_cmd "sudo make install"
       ;;
     "python")
-      #sudo python3 setup.py install  && msg "done: $?"  || exit_error "$?"
-      # --prefix="${cfg_prepare[prefix]}" ....i have trouble with pkgconfig :/ ?
-      run_cmd "git checkout ${pkg_source[release]}"
       run_cmd "sudo python3 setup.py install"
       ;;
     *)
@@ -193,11 +175,9 @@ install() {
 
 post_install() {
   msg "h2" "post install..."
-  if [ -f "post_install.sh" ]
+  if [[ -f "post_install.sh" ]]
     then
       msg "txt" "found..."
-      # shellcheck source=/dev/null
-      #. $_scriptdir/post_install.sh  && msg "done: $?"  || exit_error "$?"
       run_cmd "$_scriptdir/post_install.sh"
     else
       msg "txt" "nothing todo"
@@ -207,15 +187,13 @@ post_install() {
 uninstall() {
   msg "h1" "uninstall"
   case ${pkg_source[language]} in
-    c)
-      #sudo make uninstall && msg "done: $?"  || exit_error "$?"
+    "c")
       run_cmd "sudo make uninstall"
       ;;
-    python)
-      #sudo python setup.py uninstall && msg "done: $?"  || exit_error "$?"
+    "python")
       run_cmd "sudo python setup.py uninstall"
       ;;
-    *)
+    "*")
       msg "alert" "${pkg_source[language]} running uninstall.sh"
       run_cmd "$_scriptdir/uninstall.sh"
       ;;
@@ -227,8 +205,6 @@ post_uninstall() {
   if [[ -f "post_uninstall.sh" ]]
     then
       msg "txt" "found... "
-      # shellcheck source=/dev/null
-      #. $_scriptdir/post_uninstall.sh && msg "done: $?"  || exit_error "$?"
       run_cmd "$_scriptdir/post_uninstall.sh"
     else
       msg "txt" "nothing todo"
@@ -236,17 +212,15 @@ post_uninstall() {
 }
 
 run_cmd() {
-  $1 > $_scriptdir/stdout.log 2> $_scriptdir/stderr.log && msg "txt" "${1}... passed" || guru_meditation "$?"
+  $1 > $_scriptdir/stdout.log 2> $_scriptdir/stderr.log && msg "txt" "${1}... passed" || msg "guru_meditation" "$?"
  }
 
 # =============================================================
-# note: using -fx filename?
 # set -x  #debug
 # =============================================================
 
 . $ENSO_HOME/tools.sh
 
-clear
 msg "h1" "${pkg_source[description]}"
 
 main         # main things
