@@ -44,12 +44,14 @@ init() {
   else
     case "${pkg_source[package]}" in
       "archive" )
-        if [[ -f $(basename ${pkg_source[url]}) ]]; then # filename (whitout url)
+        _filename=$(basename ${pkg_source[url]})
+        if [[ -f $_filename ]]; then # filename (whitout url)
           msg "txt" "found archive $_filename"
         else
           msg "txt" "download archive... "
           wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || msg "guru_meditation" "$?" # want the progess
         fi
+        msg "txt" "extract archive... "
         run_cmd "bsdtar -xf $_filename"
         ;;
       "git" )
