@@ -36,7 +36,7 @@ init() {
   # Source Directoy:
   # Use existing one or get the source (archive or git)
   msg "h1" "init"
-  msg "h2" "${pkg_source[package]} source directory"
+  msg "h2" "${pkg_source[package]} source"
   _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
   _srcdir=${_srcdir#"./"}
   if [[ -d $_srcdir ]]; then
@@ -124,60 +124,66 @@ patch() {
 
 build() {
   msg "h1" "build"
-  case "${pkg_source[language]}" in
-    "c")
-      msg "quote_c"
-      if [[ -f "autogen.sh" ]] || [[ -f "configure" ]]; then
-        if [[ -f "autogen.sh" ]]; then
-            msg "h2" "run autogen.sh ..."
-            run_cmd "./autogen.sh"
+  if [[ -f "$_scriptdir/build.sh" ]]; then
+    msg "note" "${pkg_source[language]} running build.sh"
+    run_cmd "$_scriptdir/build.sh"
+  else
+    case "${pkg_source[language]}" in
+      "c")
+        msg "quote_c"
+        if [[ -f "autogen.sh" ]] || [[ -f "configure" ]]; then
+          if [[ -f "autogen.sh" ]]; then
+              msg "h2" "run autogen.sh ..."
+              run_cmd "./autogen.sh"
+          fi
+          if [[ -f "configure" ]]; then
+              msg "h2" "configure ..."
+              run_cmd "./configure ${cfg_prepare[options]}"
+          fi
+        else
+          msg "alert" "can not find autogen.sh or configure.sh script?!"
+          if [ "${opt_enso[ignore_all]}" == "yes" ]
+            then
+              msg "alert" "i have to ignore it"
+            else
+              msg "txt" "to ignore this, set \$opt_enso[ignore_all]=\"yes\""
+              exit
+          fi
         fi
-        if [[ -f "configure" ]]; then
-            msg "h2" "configure ..."
-            run_cmd "./configure ${cfg_prepare[options]}"
-        fi
-      else
-        msg "alert" "can not find autogen.sh or configure.sh script?!"
-        if [ "${opt_enso[ignore_all]}" == "yes" ]
-          then
-            msg "alert" "i have to ignore it"
-          else
-            msg "txt" "to ignore this, set \$opt_enso[ignore_all]=\"yes\""
-            exit
-        fi
-      fi
-      msg "h2" "make..."
-      run_cmd "make"
-      ;;
-    "python")
-      msg "quote_python"
-      ;;
-    *)
-      msg "alert" "${pkg_source[language]} running build.sh"
-      run_cmd "$_scriptdir/build.sh"
-      ;;
-  esac
+        msg "h2" "make..."
+        run_cmd "make"
+        ;;
+      "python")
+        msg "quote_python"
+        ;;
+    esac
+  fi
 }
 
 install() {
   msg "h1" "install"
-  case "${pkg_source[language]}" in
-    "c")
-      run_cmd "sudo make install"
-      ;;
-    "python")
-      run_cmd "sudo python3 setup.py install"
-      ;;
-    *)
-      msg "alert" "${pkg_source[language]} running install.sh"
-      run_cmd "$_scriptdir/install.sh"
-      ;;
-  esac
+  if [[ -f "$_scriptdir/install.sh" ]]; then
+    msg "note" "${pkg_source[language]} running install.sh"
+    run_cmd "$_scriptdir/install.sh"
+  else
+    case "${pkg_source[language]}" in
+      "c")
+        run_cmd "sudo make install"
+        ;;
+      "python")
+        run_cmd "sudo python3 setup.py install"
+        ;;
+      *)
+        msg "guru_meditation" "Unknow code (use install.sh)!"
+        ;;
+    esac
+  fi
 }
 
+# some extra works (install a xsession file etc.)
 post_install() {
   msg "h2" "post install..."
-  if [[ -f "post_install.sh" ]]
+  if [[ -f "$_scriptdir/post_install.sh" ]]
     then
       msg "txt" "found..."
       run_cmd "$_scriptdir/post_install.sh"
@@ -188,23 +194,25 @@ post_install() {
 
 uninstall() {
   msg "h1" "uninstall"
-  case ${pkg_source[language]} in
-    "c")
-      run_cmd "sudo make uninstall"
-      ;;
-    "python")
-      run_cmd "sudo python setup.py uninstall"
-      ;;
-    "*")
-      msg "alert" "${pkg_source[language]} running uninstall.sh"
-      run_cmd "$_scriptdir/uninstall.sh"
-      ;;
-  esac
+  if [[ -f "$_scriptdir/uninstall.sh" ]]; then
+    msg "alert" "${pkg_source[language]} running uninstall.sh"
+    run_cmd "$_scriptdir/uninstall.sh"
+  else
+    case ${pkg_source[language]} in
+      "c")
+        run_cmd "sudo make uninstall"
+        ;;
+      "python")
+        run_cmd "sudo python setup.py uninstall"
+        ;;
+    esac
+  fi
 }
 
+# cleaning up something (remove a xsession file etc.)
 post_uninstall() {
   msg "h2" "post uninstall..."
-  if [[ -f "post_uninstall.sh" ]]
+  if [[ -f "$_scriptdir/post_uninstall.sh" ]]
     then
       msg "txt" "found... "
       run_cmd "$_scriptdir/post_uninstall.sh"
