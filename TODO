@@ -6,12 +6,13 @@ OPEN
   * make it POSIX conform (named array ?)
 
 DONE
+  * show command (bu5hm4an)
   * testing if script executable
-  * fix showing gurumediation
-  * accept commands (like 6i) in main menu also
-  * save selected distribution
-  * save every change in package.conf
-  * list all pkg/actions in main menu
+  * fix showing gurumediation (DaveMDS)
+  * accept commands (like 6i) in main menu also (DaveMDS)
+  * save selected distribution (DaveMDS)
+  * save every change in package.conf (DaveMDS)
+  * list all pkg/actions in main menu (DaveMDS)
   * use git source
   * use git releases
   * use source packages (any.tar.gz)

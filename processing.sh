@@ -224,6 +224,7 @@ post_uninstall() {
 }
 
 run_cmd() {
+  msg "note" "run command: ${1}"
   $1 > $_scriptdir/stdout.log 2> $_scriptdir/stderr.log && msg "txt" "${1}... passed" || msg "guru_meditation" "$?"
  }
 
