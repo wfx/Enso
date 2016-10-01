@@ -52,7 +52,7 @@ init() {
           wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || msg "guru_meditation" "$?" # want the progess
         fi
         msg "txt" "extract archive... "
-        run_cmd "bsdtar -xf $_filename"
+        run_cmd "tar -xf $_filename"
       ;;
       git)
         if [[ -z ${pkg_source[release]} ]]; then
