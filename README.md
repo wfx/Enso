@@ -1,4 +1,6 @@
 # Enso
-A tool to install efl libs and apps for user and developer from any kind of source (enlightenment relases or git).  
+The Enlightenment software installer.
+Enso is in between user and developer :)
+
 
 ![Screenshot](https://github.com/wfx/enso/blob/master/screenshot.png)
