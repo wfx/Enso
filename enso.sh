@@ -54,6 +54,28 @@ load_package_conf() {
   done
 }
 
+save_package_conf() {
+  rm "${ENSO_HOME}/package.conf"
+  for i in "${package_index[@]}"; do
+    echo "${i};${package_name[$i]};${package_tree[$i]};${package_action[$i]}" >> "${ENSO_HOME}/package.conf"
+    echo "${i};${package_name[$i]};${package_tree[$i]};${package_action[$i]}"
+  done
+  read -p
+}
+
+load_distribution_conf() {
+  msg "h1" "load distribution configuration"
+  # the conf conatins only the name
+  exec 3<"${ENSO_HOME}/distribution.conf"
+  read -r -u 3 distribution
+}
+
+save_distribution_conf() {
+  msg "h1" "save distribution configuration"
+  rm $ENSO_HOME/distribution.conf
+  echo "$distribution" > "${ENSO_HOME}/distribution.conf"
+}
+
 package_processing() {
   msg "h1" "Processing..."
   for i in "${!package_name[@]}"; do
@@ -80,45 +102,57 @@ menu_set_distribution() {
     read -p "> "
     _reply=$REPLY
     case $_reply in
-      0) distribution=archlinux ;;
-      1) distribution=debian ;;
-      2) distribution=ubuntu ;;
-      3) distribution=fedora ;;
+      0) distribution="archlinux" ;;
+      1) distribution="debian" ;;
+      2) distribution="ubuntu" ;;
+      3) distribution="fedora" ;;
       e | E) break ;;
     esac
+    save_distribution_conf
   done
   menu_main
 }
 
-menu_set_package_action() {
+menu_main() {
   _reply=""
-  while [[ $_reply != "e" ]]; do
+  while [[ $_reply != "q" ]]; do
     clear
-    msg "h1" "Select package action:"
+    msg "h1" "Main menu: "
+    printf "Distribution: %s\n" "${distribution}"
     msg "hr"
     list_package_conf
     msg "hr"
-    msg "h2" "[n] ... set all to none"
-    msg "h2" "[i] ... set all to install"
-    msg "h2" "[u] ... set all to uninstall"
-    msg "h2" "[#] ... set action [#]+[n/i/u]"
-    msg "h2" "[e] ... exit"
+    msg "h2" "[d] ... change distribution"
+    msg "h2" "[n] ... set all package to action none"
+    msg "h2" "[i] ... set all package to action install"
+    msg "h2" "[u] ... set all package to action uninstall"
+    msg "h2" "[#] ... set action for package [#][n/i/u]"
+    msg "h2" "[p] ... processing all package action"
+    msg "h2" "[q] ... quit"
     read -p "> "
     _reply=$REPLY
     case $_reply in
-      n)
+      d | D) menu_set_distribution ;;
+      n | N)
         for i in "${package_index[@]}"; do
           package_action[${i}]="none"
-        done ;;
-      i)
+        done
+        save_package_conf ;;
+      i | I)
         for i in "${package_index[@]}"; do
           package_action[${i}]="install"
-        done ;;
-      u)
+        done
+        save_package_conf ;;
+      u | U)
         for i in "${package_index[@]}"; do
           package_action[${i}]="uninstall"
-        done ;;
-      e | E) break ;;
+        done
+        save_package_conf ;;
+      p | P) package_processing ;;
+      q | Q)
+        clear
+        echo "Have a lot of fun!"
+        exit ;;
       *)
         # index is ${_reply%?}
         # action is reply minus number ${_reply#${_reply%?}}
@@ -128,42 +162,8 @@ menu_set_package_action() {
           u) package_action[${_reply%?}]="uninstall" ;;
           *) ;;
         esac
-    esac
-  done
-  menu_main
-}
-menu_list_package_action() {
-    clear
-    msg "h1" "List package action:"
-    msg "hr"
-    list_package_conf
-    msg "h2" "Press [Enter] to exit "
-    read -p "> "
-  menu_main
-}
-
-menu_install() {
-  package_processing
-}
-
-menu_main() {
-  _reply=""
-  while [[ $_reply != "e" ]]; do
-    clear
-    msg "h1" "Main menu:"
-    msg "hr"
-    msg "h2" "[0] ... change Distribution ${distribution}"
-    msg "h2" "[1] ... set packages action"
-    msg "h2" "[2] ... list packages"
-    msg "h2" "[3] ... process package action"
-    msg "h2" "[e] ... exit"
-    read -p "> "
-    _reply=$REPLY
-    case $_reply in
-      0) menu_set_distribution ;;
-      1) menu_set_package_action ;;
-      2) menu_list_package_action ;;
-      3) menu_install ;;
+        save_package_conf
+        ;;
     esac
   done
   clear
@@ -188,6 +188,7 @@ declare -a package_name
 declare -a package_tree
 declare -a package_action
 
+load_distribution_conf
 load_package_conf
 #list_package_conf
 
