@@ -23,23 +23,36 @@ load_package_conf() {
   # defined available packages in build order:
   # 0;efl;tree/enlightenment/rel/libs/efl;install
   # ...
+  _mti=0 # min tab size for index
+  _mtn=0 # min tab size for name
+  _mtt=0 # min tab size for tree
+  _mta=9 # min tab size for action
   msg "h1" "load package configuration"
   exec 3<"package.conf"
   while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
     # get build index and seek
     i=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    if [[ ${_mti} -le ${#i} ]]; then
+      _mti=${#i}
+    fi
     # get name and seek
     n=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    if [[ ${_mtn} -le ${#n} ]]; then
+      _mtn=${#n}
+    fi
     # get tree (path) and seek
     t=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    if [[ ${_mtt} -le ${#t} ]]; then
+      _mtt=${#t}
+    fi
     # process action, next line
     a=${var%%;*};
+    package_index[${i}]="${i}"
     package_name[${i}]="${n}"
     package_tree[${i}]="${t}"
     package_action[${i}]="${a}"
   done
 }
-
 
 package_processing() {
   msg "h1" "Processing..."
@@ -53,91 +66,115 @@ package_processing() {
   done
 }
 
-set_distribution() {
-  # to install dependings (base devel, libs etc)
-  case $1 in
-    "archlinux") distribution="archlinux" ;;
-    "antergos") distribution="archlinux" ;;
-    "debian") distribution="debian" ;;
-    "ubuntu") distribution="ubuntu" ;;
-    *) distribution="" ;;
-  esac
-  if [[ $distribution == "" ]]; then
-    #TODO: autodetection
-    msg "txt" "TODO: Autodetecting distribution"
-  fi
-}
-
 menu_set_distribution() {
-  clear
-  msg "hr"
-  msg "h1" "Enso: Enlightenment Software"
-  PS3="Select: "
-  printf "Distribution:\t%s\n" "${distribution}"
-  msg "h2" "Set Distribution"
-  local options=("Arch Linux" "Debian" "Ubuntu")
-  select opt in "${options[@]}" "Quit"; do
-     case "$REPLY" in
-       1 ) set_distribution "archlinux"; break ;;
-       2 ) set_distribution "debian"; break ;;
-       3 ) set_distribution "ubuntu"; break ;;
-       $(( ${#options[@]}+1 )) ) break ;;
-       *) echo "Invalid option. Try another one.";continue;;
+  _reply=""
+  while [[ $_reply != "e" ]]; do
+    clear
+    msg "h1" "Set distribution: ${distribution}"
+    msg "hr"
+    msg "h2" "[0] ... Arch Linux"
+    msg "h2" "[1] ... Debian"
+    msg "h2" "[2] ... Ubuntu"
+    msg "h2" "[3] ... Fedora"
+    msg "h2" "[e] ... exit"
+    read -p "> "
+    _reply=$REPLY
+    case $_reply in
+      0) distribution=archlinux ;;
+      1) distribution=debian ;;
+      2) distribution=ubuntu ;;
+      3) distribution=fedora ;;
+      e | E) break ;;
     esac
   done
   menu_main
 }
 
 menu_set_package_action() {
-  clear
-  msg "hr"
-  msg "h1" "Enso: Enlightenment Software"
-  PS3="Select: "
-  printf "Process list:\t%s\n" "${list_type}"
-  msg "h2" "Set process list"
-  local options=("Prepared" "Edit")
-  select opt in "${options[@]}" "Quit"; do
-     case "$REPLY" in
-       1 ) set_package_action "prepared"; break ;;
-       2 ) set_package_action "edit"; break ;;
-       $(( ${#options[@]}+1 )) ) break ;;
-       *) echo "Invalid option. Try another one.";continue;;
+  _reply=""
+  while [[ $_reply != "e" ]]; do
+    clear
+    msg "h1" "Select package action:"
+    msg "hr"
+    list_package_conf
+    msg "hr"
+    msg "h2" "[n] ... set all to none"
+    msg "h2" "[i] ... set all to install"
+    msg "h2" "[u] ... set all to uninstall"
+    msg "h2" "[#] ... set action [#]+[n/i/u]"
+    msg "h2" "[e] ... exit"
+    read -p "> "
+    _reply=$REPLY
+    case $_reply in
+      n)
+        for i in "${package_index[@]}"; do
+          package_action[${i}]="none"
+        done ;;
+      i)
+        for i in "${package_index[@]}"; do
+          package_action[${i}]="install"
+        done ;;
+      u)
+        for i in "${package_index[@]}"; do
+          package_action[${i}]="uninstall"
+        done ;;
+      e | E) break ;;
+      *)
+        # index is ${_reply%?}
+        # action is reply minus number ${_reply#${_reply%?}}
+        case ${_reply#${_reply%?}} in
+          n) package_action[${_reply%?}]="none" ;;
+          i) package_action[${_reply%?}]="install" ;;
+          u) package_action[${_reply%?}]="uninstall" ;;
+          *) ;;
+        esac
     esac
   done
   menu_main
 }
+menu_list_package_action() {
+    clear
+    msg "h1" "List package action:"
+    msg "hr"
+    list_package_conf
+    msg "h2" "Press [Enter] to exit "
+    read -p "> "
+  menu_main
+}
 
 menu_install() {
-  for i in "${!package_action[@]}"; do
-    echo "Processing: ${package_tree[$i]} ${package_action[$i]}"
-  done
+  package_processing
 }
 
 menu_main() {
-  clear
-  msg "h1" "Enso: Enlightenment Software"
-  PS3="Select: "
-  printf "Distribution:\t%s\n" "${distribution}"
-  msg "hr"
-  msg "h2" "Main menu"
-  echo ""
-  local options=("Set Distribution" "Set Process list" "Install")
-  select opt in "${options[@]}" "Quit"; do
-     case "$REPLY" in
-       1 ) menu_set_distribution ;;
-       2 ) menu_set_package_action ;;
-       3 ) menu_install ;;
-       $(( ${#options[@]}+1 )) ) break ;;
-       *) echo "Invalid option. Try another one.";continue;;
+  _reply=""
+  while [[ $_reply != "e" ]]; do
+    clear
+    msg "h1" "Main menu:"
+    msg "hr"
+    msg "h2" "[0] ... change Distribution ${distribution}"
+    msg "h2" "[1] ... set packages action"
+    msg "h2" "[2] ... list packages"
+    msg "h2" "[3] ... process package action"
+    msg "h2" "[e] ... exit"
+    read -p "> "
+    _reply=$REPLY
+    case $_reply in
+      0) menu_set_distribution ;;
+      1) menu_set_package_action ;;
+      2) menu_list_package_action ;;
+      3) menu_install ;;
     esac
   done
+  clear
+  echo "Have a lot of fun!"
+  exit
 }
 
-
 list_package_conf() {
-  msg "h1" "Available packages"
+  printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtt}s\n" "#" "NAME" "ACTION" "TREE (PKGSRC)"
   for i in "${!package_name[@]}"; do
-    printf "%s => %s => %s => %s\n" "${i}" "${package_name[$i]}" "${package_tree[$i]}" "${package_action[$i]}"
+    printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtt}s\n" "${i}" "${package_name[$i]}" "${package_action[$i]}" "${package_tree[$i]}"
   done
 }
 
@@ -146,6 +183,7 @@ list_package_conf() {
 [[ $ENSO_HOME ]] || export ENSO_HOME=$(pwd)
 . $ENSO_HOME/tools.sh
 
+declare -a package_index
 declare -a package_name
 declare -a package_tree
 declare -a package_action
@@ -154,15 +192,26 @@ load_package_conf
 #list_package_conf
 
 # ===========================================================================
-
-#menu_main
-
-# until menu is finish (edit package.conf):
-# enter all package in the compiling order
-# 0;NAME;TREE TO PKGSRC.SH;install uninstall or none action
-# >enso.sh
-msg "h1" "Processing all packages"
-package_processing
+case $1 in
+  -h | --help)
+    echo "Help:"
+    echo "-m --menu for menu"
+  ;;
+  -m | --menu)
+    menu_main
+    #menu_set_distribution
+    #menu_set_package_action
+    #menu_list_package_action
+  ;;
+  -l | --list)
+    msg "h1" "Available packages"
+    list_package_conf
+  ;;
+  *)
+    msg "h1" "Processing all packages"
+    read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
+    package_processing
+esac
 
 unset ENSO_HOME
 exit
