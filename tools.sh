@@ -76,13 +76,9 @@ msg() {
       printf "%s\n" "${t2}"
       printf "${bg_col_red}%*s${col_normal}\n" ${cols}
       echo
-      read -s -n 1 key
-      if [[ $key = "" ]]; then
-        exit
-      else
-        cat "$_scriptdir/stderr.log"
-        exit
-      fi
+      cat "$_scriptdir/stderr.log"
+      read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
+      exit
       ;;
     *)
       printf "\t%s\n" "${col_normal}${1}"

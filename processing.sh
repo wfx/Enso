@@ -30,6 +30,8 @@ main() {
   if [[ -f "stderr.log" ]]; then
     run_cmd "rm stderr.log"
   fi
+  _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
+  _srcdir=${_srcdir#"./"}
 }
 
 init() {
@@ -125,7 +127,7 @@ patch() {
 build() {
   msg "h1" "build"
   if [[ -f "$_scriptdir/build.sh" ]]; then
-    msg "note" "${pkg_source[language]} running build.sh"
+    msg "note" "running build.sh"
     run_cmd "$_scriptdir/build.sh"
   else
     case "${pkg_source[language]}" in
@@ -243,7 +245,7 @@ if [[ "$1" == "install" ]]; then
   install      # .
   post_install # .
 elif [[ "$1" == "uninstall" ]]; then
-  cd $_srcdir
+  run_cmd "cd ${_srcdir}"
   uninstall      # .
   post_uninstall # .
 else

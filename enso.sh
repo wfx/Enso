@@ -84,6 +84,7 @@ package_processing() {
     else
       msg "h2" "Process ${package_name[$i]}"
       "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" "${package_action[$i]}"
+      msg "h1" "Processing..."
     fi
   done
 }
@@ -148,7 +149,11 @@ menu_main() {
           package_action[${i}]="uninstall"
         done
         save_package_conf ;;
-      p | P) package_processing ;;
+      p | P)
+        package_processing
+        msg "h2" "All done"
+        exit
+        ;;
       q | Q)
         clear
         echo "Have a lot of fun!"
