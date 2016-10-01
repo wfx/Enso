@@ -1,0 +1,21 @@
+HOWTO
+
+Add a source:
+  If you like to add some source then you must do the following steps.
+  * package.conf (look in package.conf to get the idea)
+    enter a new line with the following settings
+
+    id  : the next free number higher then any depending
+    name: name of the source package
+    path: the path to the pkgsrc.sh (tree/...)
+    action: the processing action for this package, none/install/uninstall
+
+    every options needs to separate with one ';'
+
+  * pkgsrc.sh
+
+    copy the template to youre package path
+    cp pkgsrc.sh.tpl the/path/defined/in/package/conf/pkgsrc.sh
+
+    edit pkgsrc.sh
+    every line in pkgsrc.sh have a description

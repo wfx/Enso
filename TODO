@@ -1,0 +1,20 @@
+
+OPEN
+  * make distribution packages.
+  * install base building dependings for selected distribution.
+  * more control for the make step ?
+  * make it POSIX conform
+
+DONE
+  * accept commands (like 6i) in main menu also
+  * save selected distribution
+  * save every change in package.conf
+  * list all pkg/actions in main menu
+  * use git source
+  * use git releases
+  * use source packages (any.tar.gz)
+  * process c code
+  * process python code
+  * add processing if patch.sh, post_install.sh or post_uninstall.sh exist
+  * add processing if build.sh, install.sh or uninstall.sh exist
+  * add guru meditation ... was very strange task for an old Atari user ;)
