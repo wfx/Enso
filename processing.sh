@@ -43,7 +43,7 @@ init() {
     msg "txt" "found directoy $_srcdir"
   else
     case "${pkg_source[package]}" in
-      "archive" )
+      archive)
         _filename=$(basename ${pkg_source[url]})
         if [[ -f $_filename ]]; then # filename (whitout url)
           msg "txt" "found archive $_filename"
@@ -53,8 +53,8 @@ init() {
         fi
         msg "txt" "extract archive... "
         run_cmd "bsdtar -xf $_filename"
-        ;;
-      "git" )
+      ;;
+      git)
         if [[ -z ${pkg_source[release]} ]]; then
           msg "txt" "git clone $(basename ${pkg_source[url]}) branch ${pkg_source[release]}"
           run_cmd "git clone ${pkg_source[url]}"
@@ -62,7 +62,7 @@ init() {
           msg "txt" "git clone $(basename ${pkg_source[url]})"
           run_cmd "git clone --branch ${pkg_source[release]} ${pkg_source[url]}"
         fi
-        ;;
+      ;;
     esac
   fi
   _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
@@ -129,7 +129,7 @@ build() {
     run_cmd "$_scriptdir/build.sh"
   else
     case "${pkg_source[language]}" in
-      "c")
+      c)
         msg "quote_c"
         if [[ -f "autogen.sh" ]] || [[ -f "configure" ]]; then
           if [[ -f "autogen.sh" ]]; then
@@ -152,10 +152,10 @@ build() {
         fi
         msg "h2" "make..."
         run_cmd "make"
-        ;;
-      "python")
+      ;;
+      python)
         msg "quote_python"
-        ;;
+      ;;
     esac
   fi
 }
@@ -167,15 +167,15 @@ install() {
     run_cmd "$_scriptdir/install.sh"
   else
     case "${pkg_source[language]}" in
-      "c")
+      c)
         run_cmd "sudo make install"
-        ;;
-      "python")
+      ;;
+      python)
         run_cmd "sudo python3 setup.py install"
-        ;;
+      ;;
       *)
         msg "guru_meditation" "Unknow code (use install.sh)!"
-        ;;
+      ;;
     esac
   fi
 }
@@ -199,12 +199,12 @@ uninstall() {
     run_cmd "$_scriptdir/uninstall.sh"
   else
     case ${pkg_source[language]} in
-      "c")
+       c)
         run_cmd "sudo make uninstall"
-        ;;
-      "python")
+      ;;
+      python)
         run_cmd "sudo python setup.py uninstall"
-        ;;
+      ;;
     esac
   fi
 }
