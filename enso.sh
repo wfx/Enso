@@ -83,7 +83,14 @@ package_processing() {
       msg "note" "nothing todo for: ${package_name[$i]}"
     else
       msg "h2" "Process ${package_name[$i]}"
-      "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" "${package_action[$i]}"
+      if [[ -x "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" ]]; then
+        "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" "${package_action[$i]}"
+      else
+        msg "note" "make pkgsrc.sh executable..."
+        chmod +x "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh"
+        msg "note" "...done"
+        "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" "${package_action[$i]}"
+      fi
       msg "h1" "Processing..."
     fi
   done
