@@ -44,7 +44,7 @@ msg() {
       printf "%*s${col_normal}\n" $(($cols - ${#2}))
       ;;
     "hr")
-      printf '%*s\n' "$cols" | tr ' ' '_'
+      printf '%*s\n' "$cols" | tr ' ' '-'
       ;;
     "txt")
       printf "\t%s\n" "${fg_col_txt}${2}"
