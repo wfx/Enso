@@ -4,9 +4,9 @@ OPEN
   * install base building dependings for selected distribution.
   * more control for the make step ?
   * make it POSIX conform (named array ?)
-  * testing if script executable
 
 DONE
+  * testing if script executable
   * fix showing gurumediation
   * accept commands (like 6i) in main menu also
   * save selected distribution
