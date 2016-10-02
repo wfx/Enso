@@ -106,10 +106,9 @@ prepare() {
       fi
   fi
 
-  if [[ -z "${cfg_prepare[cflags]}" ]]
-    then
-      msg "txt" "set: CFLAGS to ${cfg_prepare[cflags]}"
-      export CFLAGS="${cfg_prepare[cflags]}"
+  if [[ -z "${cfg_prepare[cflags]}" ]]; then
+    msg "txt" "set: CFLAGS to ${cfg_prepare[cflags]}"
+    export CFLAGS="${cfg_prepare[cflags]}"
   fi
 }
 
@@ -180,6 +179,8 @@ install() {
       ;;
     esac
   fi
+  # needed on Linux to update linker library database
+  run_cmd "sudo ldconfig"
 }
 
 # some extra works (install a xsession file etc.)
@@ -230,6 +231,8 @@ run_cmd() {
 
 # =============================================================
 # set -x  #debug
+# export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig"
+# export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib/"
 # =============================================================
 
 . $ENSO_HOME/tools.sh
