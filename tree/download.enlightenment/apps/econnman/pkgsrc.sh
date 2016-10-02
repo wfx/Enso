@@ -12,7 +12,7 @@ pkg_source[release]=""                                 # optional release number
 
 cfg_prepare[prefix]="/usr/local"                       # prefix default is /usr/local
 cfg_prepare[cflags]="-O2 -ffast-math -march=native -g -ggdb3"  # optional cflags
-cfg_prepare[options]=""                                # optionial configure settings TODO: maybe go back to regex here the prefix
+cfg_prepare[options]="--prefix=/usr/local"             # optionial configure settings TODO: maybe go back to regex here the prefix
 # ==================================================== #
 
 . ${ENSO_HOME}/processing.sh
