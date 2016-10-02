@@ -1,5 +1,6 @@
 # Untracked folder/files:
 /foo
+*.log
 
 # Object files
 *.o
