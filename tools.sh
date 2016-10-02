@@ -47,19 +47,19 @@ msg() {
       printf '%*s\n' "$cols" | tr ' ' '-'
       ;;
     "txt")
-      printf "\t%s\n" "${fg_col_txt}${2}"
+      printf "%s\n" "${fg_col_txt}${2}"
       ;;
     "alert")
-      printf "\t%s\n" "${fg_col_alert}${2}"
+      printf "%s\n" "${fg_col_alert}${2}"
       ;;
     "note")
-      printf "\t%s\n" "${fg_col_note}${2}"
+      printf "%s\n" "${fg_col_note}${2}"
       ;;
     "quote_c")
-      printf "\t%s\n" "${fg_col_quote}C Code!" "One lang to rule them all," "One lang to find them," "One lang to bring them all and in the enlightenment bind them."
+      printf "%s\n" "${fg_col_quote}C Code!" "One lang to rule them all," "One lang to find them," "One lang to bring them all and in the enlightenment bind them."
       ;;
     "quote_python")
-      printf "\t%s\n" "${fg_col_quote}Python code..." "what else :-p"
+      printf "%s\n" "${fg_col_quote}Python code..." "what else :-p"
       ;;
     "guru_meditation")
       local t1="Software failure. Press enter button to continue."
@@ -81,7 +81,7 @@ msg() {
       exit
       ;;
     *)
-      printf "\t%s\n" "${col_normal}${1}"
+      printf "%s\n" "${col_normal}${1}"
       ;;
   esac
 }
