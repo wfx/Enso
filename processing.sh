@@ -169,10 +169,11 @@ install() {
   else
     case "${pkg_source[language]}" in
       c)
-        run_cmd "sudo make install"
+        run_cmd "sudo -E make install"
       ;;
       python)
-        run_cmd "sudo python3 setup.py install"
+        # sudo -E to have the environment vars
+        run_cmd "sudo -E python3 setup.py install"
       ;;
       *)
         msg "guru_meditation" "Unknow code (use install.sh)!"
@@ -231,8 +232,6 @@ run_cmd() {
 
 # =============================================================
 # set -x  #debug
-# export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig"
-# export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib/"
 # =============================================================
 
 . $ENSO_HOME/tools.sh
@@ -257,4 +256,4 @@ else
   msg "note" "call me with: install || uninstall"
 fi
 
-exit 0
+exit

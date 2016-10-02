@@ -93,8 +93,10 @@ package_processing() {
       fi
       msg "h1" "Processing..."
     fi
+    log_package_processing
   done
 }
+
 
 menu_set_distribution() {
   _reply=""
@@ -183,6 +185,10 @@ menu_main() {
   exit
 }
 
+log_package_processing() {
+  echo "${package_index[${i}]}:${package_name[${i}]}:${package_action[${i}]}:exitcode ${?}" >> "${ENSO_HOME}/enso.log"
+}
+
 list_package_conf() {
   printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtt}s\n" "#" "NAME" "ACTION" "TREE (PKGSRC)"
   for i in "${!package_name[@]}"; do
@@ -202,6 +208,7 @@ declare -a package_action
 
 load_distribution_conf
 load_package_conf
+echo "$(date %Y/%m/%d_%T)" >> "${ENSO_HOME}/enso.log"
 #list_package_conf
 
 # ===========================================================================

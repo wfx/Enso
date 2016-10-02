@@ -78,7 +78,7 @@ msg() {
       echo
       cat "$_scriptdir/stderr.log"
       read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
-      exit
+      exit "${2}"
       ;;
     *)
       printf "%s\n" "${col_normal}${1}"
