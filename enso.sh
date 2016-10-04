@@ -27,7 +27,6 @@ load_package_conf() {
   _mtn=0 # min tab size for name
   _mtt=0 # min tab size for tree
   _mta=9 # min tab size for action
-  msg "h1" "load package configuration"
   exec 3<"package.conf"
   while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
     # get build index and seek
@@ -58,22 +57,26 @@ save_package_conf() {
   rm "${ENSO_HOME}/package.conf"
   for i in "${package_index[@]}"; do
     echo "${i};${package_name[$i]};${package_tree[$i]};${package_action[$i]}" >> "${ENSO_HOME}/package.conf"
-    echo "${i};${package_name[$i]};${package_tree[$i]};${package_action[$i]}"
   done
-  read -p
 }
 
 load_distribution_conf() {
-  msg "h1" "load distribution configuration"
-  # the conf conatins only the name
   exec 3<"${ENSO_HOME}/distribution.conf"
-  read -r -u 3 distribution
+  while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
+    # get distributin name and seek
+    distribution[0]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    # get install graphical system option (enabled|disabled)
+    distribution[1]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    # get install build essential option (enabled|disabled)
+    distribution[2]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    # get build packages option (enabled|disabled)
+    distribution[3]=${var%%;*};
+  done
 }
 
 save_distribution_conf() {
-  msg "h1" "save distribution configuration"
-  rm $ENSO_HOME/distribution.conf
-  echo "$distribution" > "${ENSO_HOME}/distribution.conf"
+  rm "${ENSO_HOME}/distribution.conf"
+  echo "${distribution[0]};${distribution[1]};${distribution[2]};${distribution[3]}" > "${ENSO_HOME}/distribution.conf"
 }
 
 package_processing() {
@@ -97,28 +100,77 @@ package_processing() {
   done
 }
 
-
-menu_set_distribution() {
+sub_menu_prepare_distribution() {
+  # distribution[0] name
+  # distribution[1] install graphical system enabled|disabled
+  # distribution[2] install build essential enabled|disabled
+  # distribution[3] build packages enabled|disabled
   _reply=""
   while [[ $_reply != "e" ]]; do
     clear
-    msg "h1" "Set distribution: ${distribution}"
+    msg "h1" "Prepare:"
     msg "hr"
-    msg "h2" "[0] ... Arch Linux"
-    msg "h2" "[1] ... Debian"
-    msg "h2" "[2] ... Ubuntu"
-    msg "h2" "[3] ... Fedora"
+    printf "  Distribution ........... : %s\n"  "${distribution[0]}"
+    msg "hr"
+    msg "1 Install graphical system : ${distribution[1]}"
+    msg "2 Install build essential  : ${distribution[2]}"
+    msg "3 Build packages           : ${distribution[3]}"
+    msg "hr"
+    msg "h2" "[#] ... change option [#][d|e]"
     msg "h2" "[e] ... exit"
     read -p "> "
     _reply=$REPLY
     case $_reply in
-      0) distribution="archlinux" ;;
-      1) distribution="debian" ;;
-      2) distribution="ubuntu" ;;
-      3) distribution="fedora" ;;
+      e | E) break ;;
+      *)
+        # index is ${_reply%?}
+        # action is reply minus number ${_reply#${_reply%?}}
+        echo ${_reply%?}
+        echo  ${_reply#${_reply%?}}
+        if [[ "${_reply%?}" -gt 0 ]] || [[ "${_reply%?}" -lt 4 ]]; then
+          case ${_reply#${_reply%?}} in
+            e) distribution[${_reply%?}]="enabled" ;;
+            d) distribution[${_reply%?}]="disabled" ;;
+            *) ;;
+          esac
+        fi
+    esac
+  done
+  save_distribution_conf
+  menu_prepare_distribution
+}
+
+menu_prepare_distribution() {
+  # distribution[0] name
+  _reply=""
+  while [[ $_reply != "e" ]]; do
+    clear
+    msg "h1" "Prepare distribution:"
+    msg "hr"
+    msg "# Name"
+    msg "1 Arch Linux"
+    msg "2 Debian"
+    msg "3 Ubuntu"
+    msg "hr"
+    msg "h2" "[#] ... set distribution [#]"
+    msg "h2" "[e] ... exit"
+    read -p "> "
+    _reply=$REPLY
+    case $_reply in
+      1)
+        distribution[0]="archlinux"
+        sub_menu_prepare_distribution
+        ;;
+      2)
+        distribution[0]="debian"
+        sub_menu_prepare_distribution
+        ;;
+      3)
+        distribution[0]="ubuntu"
+        sub_menu_prepare_distribution
+        ;;
       e | E) break ;;
     esac
-    save_distribution_conf
   done
   menu_main
 }
@@ -128,11 +180,12 @@ menu_main() {
   while [[ $_reply != "q" ]]; do
     clear
     msg "h1" "Main menu: "
-    printf "Distribution: %s\n" "${distribution}"
+    msg "hr"
+    list_distribution_conf
     msg "hr"
     list_package_conf
     msg "hr"
-    msg "h2" "[d] ... change distribution"
+    msg "h2" "[d] ... prepare distribution"
     msg "h2" "[n] ... set all package to action none"
     msg "h2" "[i] ... set all package to action install"
     msg "h2" "[u] ... set all package to action uninstall"
@@ -142,7 +195,7 @@ menu_main() {
     read -p "> "
     _reply=$REPLY
     case $_reply in
-      d | D) menu_set_distribution ;;
+      d | D) menu_prepare_distribution ;;
       n | N)
         for i in "${package_index[@]}"; do
           package_action[${i}]="none"
@@ -189,6 +242,13 @@ log_package_processing() {
   echo "${package_index[${i}]}:${package_name[${i}]}:${package_action[${i}]}:exitcode ${?}" >> "${ENSO_HOME}/enso.log"
 }
 
+list_distribution_conf() {
+  printf "Distribution ........... : %s\n" "${distribution[0]}"
+  printf "Install graphical system : %s\n" "${distribution[1]}"
+  printf "Install build essential  : %s\n" "${distribution[2]}"
+  printf "Build packages ......... : %s\n" "${distribution[3]}"
+}
+
 list_package_conf() {
   printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtt}s\n" "#" "NAME" "ACTION" "TREE (PKGSRC)"
   for i in "${!package_name[@]}"; do
@@ -206,22 +266,23 @@ declare -a package_name
 declare -a package_tree
 declare -a package_action
 
+msg "h1" "Prepare ENSO"
+msg "h2" "load distribution configuration"
 load_distribution_conf
+msg "h2" "load package configuration"
 load_package_conf
+msg "h2" "log timestap"
 echo "$(date %Y/%m/%d_%T)" >> "${ENSO_HOME}/enso.log"
-#list_package_conf
 
 # ===========================================================================
 case $1 in
   -h | --help)
     echo "Help:"
     echo "-m --menu for menu"
+    echo "-l --list list available packages"
   ;;
   -m | --menu)
     menu_main
-    #menu_set_distribution
-    #menu_set_package_action
-    #menu_list_package_action
   ;;
   -l | --list)
     msg "h1" "Available packages"
