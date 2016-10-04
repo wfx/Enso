@@ -1,13 +1,9 @@
 #!/bin/bash
 
-declare -A opt_enso
 declare -A pkg_source
 declare -A cfg_prepare
 
 # SETTING ============================================ #
-opt_enso[testing]="no"                                 # yes||no
-opt_enso[ignore_all]="no"                              # yes||no
-
 pkg_source[description]=""                             # Short description (optional)
 pkg_source[url]=""                                     # full url (address/filename.extension)
 pkg_source[package]="archive"                          # archive -> use tar || git -> git clone TODO: get this information from file
