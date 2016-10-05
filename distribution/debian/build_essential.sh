@@ -1,13 +1,15 @@
 #!/bin/bash
-apt-get -y install \
-wget curl subversion git cvs bzr autoconf \
-automake gettext build-essential pkg-config libtool autotools-dev check \
-zlib1g-dev libjpeg-dev libgif-dev libtiff5-dev librsvg2-dev libfreetype6-dev \
-libx11-dev libpng12-dev libxext-dev libxp-dev libxtst-dev libxrender-dev \
-libxinerama-dev libxcursor-dev libxrandr-dev libxdamage-dev libxcb-shape0-dev \
-libxcb-keysyms1-dev libxcomposite-dev libpam-dev libxss-dev libssl-dev \
-libfribidi-dev libdbus-1-dev libcurl3-dev libxml2-dev libxslt1-dev libltdl3-dev \
-libtag1-dev libtagc0-dev libxine-dev libsqlite3-dev libfontconfig1-dev \
-liblua5.1-dev libsndfile1-dev libpulse-dev libudev-dev libmount-dev libblkid-dev \
-libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev libvlc-dev python-dev \
-mesa-common-dev libgles2-mesa-dev \
+apt-get -y \
+make gcc bison flex gawk subversion automake autoconf doxygen\
+check autotools-dev autoconf-archive autopoint libtool gettext \
+libpam0g-dev libfreetype6-dev libpng12-dev zlib1g-dev  libjpeg-dev\
+libdbus-1-dev luajit libluajit-5.1-dev libx11-dev libxcursor-dev\
+libxrender-dev libxrandr-dev libxfixes-dev libxdamage-dev\
+libxcomposite-dev libxss-dev libxp-dev libxext-dev libxinerama-dev \
+libxkbfile-dev libxtst-dev libxcb1-dev libxcb-shape0-dev\
+libxcb-keysyms1-dev libpulse-dev libsndfile1-dev  libudev-dev\
+libblkid-dev libmount-dev libgstreamer1.0-dev libtiff5-dev libgif-dev\
+curl libssl-dev libspectre-dev libpoppler-dev librsvg2-dev\
+libraw-dev libxinerama-dev git libfribidi-dev libcogl-gles2-dev\
+libbullet-dev libgstreamer-plugins-base1.0-dev libvlc-dev \
+libpoppler-cpp-dev libsystemd-dev
