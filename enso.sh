@@ -65,9 +65,9 @@ load_distribution_conf() {
   while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
     # get distributin name and seek
     distribution[0]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-    # get install graphical system option (enabled|disabled)
-    distribution[1]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
     # get install build essential option (enabled|disabled)
+    distribution[1]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    # get install graphical system option (enabled|disabled)
     distribution[2]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
     # get build packages option (enabled|disabled)
     distribution[3]=${var%%;*};
@@ -80,6 +80,21 @@ save_distribution_conf() {
 }
 
 package_processing() {
+  if [[ "${distribution[0]}" != "none" ]]; then
+    msg "h1" "Prepare distribution ${distribution[0]}"
+    if [[ "${distribution[1]}" != "enabled" ]]; then
+      msg "h2" "Install build essential"
+      "${ENSO_HOME}/distribution/${distribution[0]}/build_essential.sh"
+    fi
+    if [[ "${distribution[2]}" != "enabled" ]]; then
+      msg "h2" "Install graphical system"
+      "${ENSO_HOME}/distribution/${distribution[0]}/install_graphics_system.sh"
+    fi
+    if [[ "${distribution[3]}" != "enabled" ]]; then
+      msg "h2" "Build packages"
+      # not yet implemented
+    fi
+  fi
   msg "h1" "Processing..."
   for i in "${!package_name[@]}"; do
     if [[ "${package_action[$i]}" == "none" ]]; then
@@ -102,8 +117,8 @@ package_processing() {
 
 sub_menu_prepare_distribution() {
   # distribution[0] name
-  # distribution[1] install graphical system enabled|disabled
-  # distribution[2] install build essential enabled|disabled
+  # distribution[1] install build essential enabled|disabled
+  # distribution[2] install graphical system enabled|disabled
   # distribution[3] build packages enabled|disabled
   _reply=""
   while [[ $_reply != "e" ]]; do
@@ -112,9 +127,9 @@ sub_menu_prepare_distribution() {
     msg "hr"
     printf "  Distribution ........... : %s\n"  "${distribution[0]}"
     msg "hr"
-    msg "1 Install graphical system : ${distribution[1]}"
-    msg "2 Install build essential  : ${distribution[2]}"
-    msg "3 Build packages           : ${distribution[3]}"
+    msg "1 Install build essential  : ${distribution[1]}"
+    msg "2 Install graphical system : ${distribution[2]}"
+    #msg "3 Build packages           : ${distribution[3]}"
     msg "hr"
     msg "h2" "[#] ... change option [#][d|e]"
     msg "h2" "[e] ... exit"
@@ -148,6 +163,7 @@ menu_prepare_distribution() {
     msg "h1" "Prepare distribution:"
     msg "hr"
     msg "# Name"
+    msg "0 None"
     msg "1 Arch Linux"
     msg "2 Debian"
     msg "3 Ubuntu"
@@ -157,6 +173,9 @@ menu_prepare_distribution() {
     read -p "> "
     _reply=$REPLY
     case $_reply in
+      0)
+        distribution[0]="none"
+        ;;
       1)
         distribution[0]="archlinux"
         sub_menu_prepare_distribution
@@ -244,9 +263,9 @@ log_package_processing() {
 
 list_distribution_conf() {
   printf "Distribution ........... : %s\n" "${distribution[0]}"
-  printf "Install graphical system : %s\n" "${distribution[1]}"
-  printf "Install build essential  : %s\n" "${distribution[2]}"
-  printf "Build packages ......... : %s\n" "${distribution[3]}"
+  printf "Install build essential  : %s\n" "${distribution[1]}"
+  printf "Install graphical system : %s\n" "${distribution[2]}"
+  #printf "Build packages ......... : %s\n" "${distribution[3]}"
 }
 
 list_package_conf() {
