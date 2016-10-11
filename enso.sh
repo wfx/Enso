@@ -82,15 +82,15 @@ save_distribution_conf() {
 package_processing() {
   if [[ "${distribution[0]}" != "none" ]]; then
     msg "h1" "Prepare distribution ${distribution[0]}"
-    if [[ "${distribution[1]}" != "enabled" ]]; then
+    if [[ "${distribution[1]}" == "enabled" ]]; then
       msg "h2" "Install build essential"
       "${ENSO_HOME}/distribution/${distribution[0]}/build_essential.sh"
     fi
-    if [[ "${distribution[2]}" != "enabled" ]]; then
+    if [[ "${distribution[2]}" == "enabled" ]]; then
       msg "h2" "Install graphical system"
       "${ENSO_HOME}/distribution/${distribution[0]}/install_graphics_system.sh"
     fi
-    if [[ "${distribution[3]}" != "enabled" ]]; then
+    if [[ "${distribution[3]}" == "enabled" ]]; then
       msg "h2" "Build packages"
       # not yet implemented
     fi
