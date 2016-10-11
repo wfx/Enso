@@ -11,4 +11,4 @@ libscim-dev libsndfile1-dev libspectre-dev libssl-dev libsystemd-dev libtiff5-de
 libtorrent-rasterbar-dev libudev-dev libudisks2-dev libunibreak-dev libv8-dev libvlc-dev libwebp-dev \
 libxcb-keysyms1-dev libxcb-shape0-dev libxcomposite-dev libxcursor-dev libxine2-dev libxinerama-dev \
 libxkbcommon-dev libxrandr-dev libxrender-dev libxss-dev libxtst-dev mtdev-tools pkg-config python-dbus-dev \
-python-dev python3-dbus-dev python3-dev python-distutils-extra python-xdg ragel valgrind wmctrl xserver-xephyr
+python-dev python3-dbus-dev python3-dev python3-distutils-extra python3-xdg ragel valgrind wmctrl xserver-xephyr
