@@ -1,6 +1,6 @@
 #!/bin/bash
-local _grp="sudo"
-local _usr=${USER}
+_grp="sudo"
+_usr=${USER}
 
 install_essential() {
   sudo apt-get install -y \
@@ -18,16 +18,19 @@ install_essential() {
   python-dev python3-dbus-dev python3-dev python3-distutils-extra python3-xdg ragel valgrind wmctrl xserver-xephyr
 }
 
-if id -nG "${_usr}" | grep -qw "${_grp}"; thenif id -nG "${_usr}" | grep -qw "${_grp}"; then
+if id -nG "${_usr}" | grep -qw "${_grp}"; then
   install_essential
 else
   echo "we need to install sudo and add youreself to sudo group:"
+  echo "--------------------------------------------------------"
+  echo "su"
   echo "apt-get install sudo"
-  echo "useradd -g sudo ${_usr} as root"
+  echo "adduser ${_usr} sudo"
+  echo "--------------------------------------------------------"
   read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
   su
   apt-get install sudo
-  useradd -g sudo ${_usr}
+  adduser ${_usr} sudo
   logout
   install_essential
 fi
