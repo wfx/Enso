@@ -5,7 +5,7 @@ declare -A cfg_prepare
 
 # SETTING ============================================ #
 pkg_source[description]="Enlightenment Foundation Libraries"       # Short description (optional)
-pkg_source[url]="http://download.enlightenment.org/rel/libs/efl/efl-1.18.0.tar.gz" # full url (address/filename.extension)
+pkg_source[url]="http://download.enlightenment.org/rel/libs/efl/efl-1.18.1.tar.gz" # full url (address/filename.extension)
 pkg_source[package]="archive"                          # archive -> use bsdtar || git -> git clone TODO: get this information from file
 pkg_source[language]="c"                               # c||python TODO: is it empty then looks for build.sh
 pkg_source[release]=""                                 # optional release number (used for git)
