@@ -32,6 +32,7 @@ main() {
   fi
   _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
   _srcdir=${_srcdir#"./"}
+  _filename=$(basename ${pkg_source[url]}) # ! git is not filename... i can ignore this.
 }
 
 init() {
@@ -225,6 +226,18 @@ post_uninstall() {
   fi
 }
 
+cleaning() {
+  msg "h2" "cleaning..."
+  run_cmd "cd ${_scriptdir}"
+  if [[ -d ${_srcdir} ]]; then
+    run_cmd "shopt -s extglob"
+    run_cmd "sudo rm -rf ${_srcdir}"
+  fi
+  if [[ -f "${_filename}" ]]; then
+    run_cmd "sudo rm ${_filename}"
+  fi
+}
+
 run_cmd() {
   msg "note" "run command: ${1}"
   $1 > $_scriptdir/stdout.log 2> $_scriptdir/stderr.log && msg "txt" "${1}... passed" || msg "guru_meditation" "$?"
@@ -241,6 +254,17 @@ msg "h1" "${pkg_source[description]}"
 main         # main things
 
 if [[ "$1" == "install" ]]; then
+  init         # getting source
+  prepare      # set environment and
+  patch        # .
+  build        # .
+  install      # .
+  post_install # .
+elif [[ "$1" == "reinstall" ]]; then
+  run_cmd "cd ${_srcdir}"
+  uninstall      # .
+  post_uninstall # .
+  cleaning
   init         # getting source
   prepare      # set environment and
   patch        # .

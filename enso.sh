@@ -207,8 +207,9 @@ menu_main() {
     msg "h2" "[d] ... prepare distribution"
     msg "h2" "[n] ... set all package to action none"
     msg "h2" "[i] ... set all package to action install"
+    msg "h2" "[r] ... set all package to action reinstall"
     msg "h2" "[u] ... set all package to action uninstall"
-    msg "h2" "[#] ... set action for package [#][n/i/u]"
+    msg "h2" "[#] ... set action for package [#][n/i/r/u]"
     msg "h2" "[p] ... processing all package action"
     msg "h2" "[q] ... quit"
     read -p "> "
@@ -230,6 +231,11 @@ menu_main() {
           package_action[${i}]="uninstall"
         done
         save_package_conf ;;
+      r | R)
+        for i in "${package_index[@]}"; do
+          package_action[${i}]="reinstall"
+        done
+        save_package_conf ;;
       p | P)
         package_processing
         msg "h2" "All done"
@@ -245,6 +251,7 @@ menu_main() {
         case ${_reply#${_reply%?}} in
           n) package_action[${_reply%?}]="none" ;;
           i) package_action[${_reply%?}]="install" ;;
+          r) package_action[${_reply%?}]="reinstall" ;;
           u) package_action[${_reply%?}]="uninstall" ;;
           *) ;;
         esac
@@ -308,7 +315,7 @@ case $1 in
     list_package_conf
   ;;
   *)
-    msg "h1" "Processing all packages"
+    msg "h1" "Processing all package actions?"
     read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
     package_processing
 esac
