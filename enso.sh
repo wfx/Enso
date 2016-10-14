@@ -21,12 +21,13 @@
 load_package_conf() {
   # load package.conf
   # defined available packages in build order:
-  # 0;efl;tree/enlightenment/rel/libs/efl;install
+  # 0;efl;tree/enlightenment/rel/libs/efl;install;build description
   # ...
   _mti=0 # min tab size for index
   _mtn=0 # min tab size for name
   _mtt=0 # min tab size for tree
   _mta=9 # min tab size for action
+  _mtd=0 # min tab size for description
   exec 3<"package.conf"
   while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
     # get build index and seek
@@ -44,19 +45,29 @@ load_package_conf() {
     if [[ ${_mtt} -le ${#t} ]]; then
       _mtt=${#t}
     fi
-    # process action, next line
-    a=${var%%;*};
+    # get action (path) and seek
+    a=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
+    if [[ ${_mta} -le ${#a} ]]; then
+      _mtt=${#a}
+    fi
+    # get description, next line
+    d=${var%%;*};
+    if [[ ${_mtd} -le ${#d} ]]; then
+      _mtd=${#d}
+    fi
+
     package_index[${i}]="${i}"
     package_name[${i}]="${n}"
     package_tree[${i}]="${t}"
     package_action[${i}]="${a}"
+    package_description[${i}]="${d}"
   done
 }
 
 save_package_conf() {
   rm "${ENSO_HOME}/package.conf"
   for i in "${package_index[@]}"; do
-    echo "${i};${package_name[$i]};${package_tree[$i]};${package_action[$i]}" >> "${ENSO_HOME}/package.conf"
+    echo "${i};${package_name[$i]};${package_tree[$i]};${package_action[$i]};${package_description[$i]}" >> "${ENSO_HOME}/package.conf"
   done
 }
 
@@ -132,11 +143,11 @@ sub_menu_prepare_distribution() {
     #msg "3 Build packages           : ${distribution[3]}"
     msg "hr"
     msg "h2" "[#] ... change option [#][d|e]"
-    msg "h2" "[e] ... exit"
+    msg "h2" "[q] ... quit"
     read -p "> "
     _reply=$REPLY
     case $_reply in
-      e | E) break ;;
+      q | Q) break ;;
       *)
         # index is ${_reply%?}
         # action is reply minus number ${_reply#${_reply%?}}
@@ -161,6 +172,7 @@ menu_prepare_distribution() {
   while [[ $_reply != "e" ]]; do
     clear
     msg "h1" "Prepare distribution:"
+    list_distribution_conf
     msg "hr"
     msg "# Name"
     msg "0 None"
@@ -169,12 +181,13 @@ menu_prepare_distribution() {
     msg "3 Ubuntu"
     msg "hr"
     msg "h2" "[#] ... set distribution [#]"
-    msg "h2" "[e] ... exit"
+    msg "h2" "[q] ... quit"
     read -p "> "
     _reply=$REPLY
     case $_reply in
       0)
         distribution[0]="none"
+        save_distribution_conf
         ;;
       1)
         distribution[0]="archlinux"
@@ -188,7 +201,7 @@ menu_prepare_distribution() {
         distribution[0]="ubuntu"
         sub_menu_prepare_distribution
         ;;
-      e | E) break ;;
+      q | Q) break ;;
     esac
   done
   menu_main
@@ -199,17 +212,16 @@ menu_main() {
   while [[ $_reply != "q" ]]; do
     clear
     msg "h1" "Main menu: "
-    msg "hr"
     list_distribution_conf
     msg "hr"
     list_package_conf
     msg "hr"
+    msg "h2" "set all package to action"
+    msg "h2" "[n] none      | [c] cleanup"
+    msg "h2" "[i] install   | [r] reinstall | [u] uninstall"
+    msg "h2" "set action for package [#][n/c/i/r/u]"
+    msg "hr"
     msg "h2" "[d] ... prepare distribution"
-    msg "h2" "[n] ... set all package to action none"
-    msg "h2" "[i] ... set all package to action install"
-    msg "h2" "[r] ... set all package to action reinstall"
-    msg "h2" "[u] ... set all package to action uninstall"
-    msg "h2" "[#] ... set action for package [#][n/i/r/u]"
     msg "h2" "[p] ... processing all package action"
     msg "h2" "[q] ... quit"
     read -p "> "
@@ -221,19 +233,24 @@ menu_main() {
           package_action[${i}]="none"
         done
         save_package_conf ;;
+      c | C)
+        for i in "${package_index[@]}"; do
+          package_action[${i}]="cleanup"
+        done
+        save_package_conf ;;
       i | I)
         for i in "${package_index[@]}"; do
           package_action[${i}]="install"
         done
         save_package_conf ;;
-      u | U)
-        for i in "${package_index[@]}"; do
-          package_action[${i}]="uninstall"
-        done
-        save_package_conf ;;
       r | R)
         for i in "${package_index[@]}"; do
           package_action[${i}]="reinstall"
+        done
+        save_package_conf ;;
+      u | U)
+        for i in "${package_index[@]}"; do
+          package_action[${i}]="uninstall"
         done
         save_package_conf ;;
       p | P)
@@ -249,10 +266,11 @@ menu_main() {
         # index is ${_reply%?}
         # action is reply minus number ${_reply#${_reply%?}}
         case ${_reply#${_reply%?}} in
-          n) package_action[${_reply%?}]="none" ;;
-          i) package_action[${_reply%?}]="install" ;;
-          r) package_action[${_reply%?}]="reinstall" ;;
-          u) package_action[${_reply%?}]="uninstall" ;;
+          n | N) package_action[${_reply%?}]="none" ;;
+          c | C) package_action[${_reply%?}]="cleanup" ;;
+          i | I) package_action[${_reply%?}]="install" ;;
+          r | R) package_action[${_reply%?}]="reinstall" ;;
+          u | U) package_action[${_reply%?}]="uninstall" ;;
           *) ;;
         esac
         save_package_conf
@@ -269,16 +287,19 @@ log_package_processing() {
 }
 
 list_distribution_conf() {
-  printf "Distribution ........... : %s\n" "${distribution[0]}"
-  printf "Install build essential  : %s\n" "${distribution[1]}"
-  printf "Install graphical system : %s\n" "${distribution[2]}"
-  #printf "Build packages ......... : %s\n" "${distribution[3]}"
+  if [[ ${distribution[0]} != "none" ]]; then
+    printf "Distribution %s install:\n" "${distribution[0]}"
+    printf "Build essential: %s / Graphical system: %s \n" "${distribution[1]}" "${distribution[2]}"
+    #printf "Build packages ......... : %s\n" "${distribution[3]}"
+  else
+    printf "Distribution %s:\n" "${distribution[0]}"
+  fi
 }
 
 list_package_conf() {
-  printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtt}s\n" "#" "NAME" "ACTION" "TREE (PKGSRC)"
+  printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtd}s\n" "#" "NAME" "ACTION" "DESCRIPTION (BUILD DEPENDENCIES)"
   for i in "${!package_name[@]}"; do
-    printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtt}s\n" "${i}" "${package_name[$i]}" "${package_action[$i]}" "${package_tree[$i]}"
+    printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtd}s\n" "${i}" "${package_name[$i]}" "${package_action[$i]}" "${package_description[$i]}"
   done
 }
 
@@ -311,7 +332,9 @@ case $1 in
     menu_main
   ;;
   -l | --list)
-    msg "h1" "Available packages"
+    msg "h1" "List settings"
+    list_distribution_conf
+    msg "hr"
     list_package_conf
   ;;
   *)
