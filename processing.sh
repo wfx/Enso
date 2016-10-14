@@ -238,11 +238,6 @@ cleaning() {
   fi
 }
 
-run_cmd() {
-  msg "note" "run command: ${1}"
-  $1 > $_scriptdir/stdout.log 2> $_scriptdir/stderr.log && msg "txt" "${1}... passed" || msg "guru_meditation" "$?"
- }
-
 # =============================================================
 # set -x  #debug
 # =============================================================
@@ -275,6 +270,9 @@ elif [[ "$1" == "uninstall" ]]; then
   run_cmd "cd ${_srcdir}"
   uninstall      # .
   post_uninstall # .
+elif [[ "$1" == "cleanup" ]]; then
+  run_cmd "cd ${_srcdir}"
+  cleaning
 else
   msg "h2" "usage"
   msg "note" "call me with: install || uninstall"
