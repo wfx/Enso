@@ -106,23 +106,18 @@ package_processing() {
       # not yet implemented
     fi
   fi
-  msg "h1" "Processing..."
+  msg "h1" "Processing all packages..."
   for i in "${!package_name[@]}"; do
     if [[ "${package_action[$i]}" == "none" ]]; then
       msg "note" "nothing todo for: ${package_name[$i]}"
     else
-      msg "h2" "Process ${package_name[$i]}"
-      if [[ -x "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" ]]; then
-        "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" "${package_action[$i]}"
-      else
+      msg "h1" "Process ${package_name[$i]}"
+      if [[ ! -x "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" ]]; then
         msg "note" "make pkgsrc.sh executable..."
-        chmod +x "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh"
-        msg "note" "...done"
-        "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" "${package_action[$i]}"
+        run_cmd "chmod +x ${ENSO_HOME}/${package_tree[$i]}/pkgsrc.sh"
       fi
-      msg "h1" "Processing..."
+      "${ENSO_HOME}/${package_tree[$i]}/pkgsrc.sh" "--${package_action[$i]}"
     fi
-    log_package_processing
   done
 }
 
@@ -188,20 +183,22 @@ menu_prepare_distribution() {
       0)
         distribution[0]="none"
         save_distribution_conf
-        ;;
+      ;;
       1)
         distribution[0]="archlinux"
         sub_menu_prepare_distribution
-        ;;
+      ;;
       2)
         distribution[0]="debian"
         sub_menu_prepare_distribution
-        ;;
+      ;;
       3)
         distribution[0]="ubuntu"
         sub_menu_prepare_distribution
-        ;;
-      q | Q) break ;;
+      ;;
+      q | Q)
+        break
+      ;;
     esac
   done
   menu_main
@@ -282,10 +279,6 @@ menu_main() {
   exit
 }
 
-log_package_processing() {
-  echo "${package_index[${i}]}:${package_name[${i}]}:${package_action[${i}]}:exitcode ${?}" >> "${ENSO_HOME}/enso.log"
-}
-
 list_distribution_conf() {
   if [[ ${distribution[0]} != "none" ]]; then
     printf "Distribution %s install:\n" "${distribution[0]}"
@@ -318,16 +311,9 @@ msg "h2" "load distribution configuration"
 load_distribution_conf
 msg "h2" "load package configuration"
 load_package_conf
-msg "h2" "log timestap"
-echo "$(date +%Y/%m/%d_%T)" >> "${ENSO_HOME}/enso.log"
 
 # ===========================================================================
 case $1 in
-  -h | --help)
-    echo "Help:"
-    echo "-m --menu for menu"
-    echo "-l --list list available packages"
-  ;;
   -m | --menu)
     menu_main
   ;;
@@ -337,10 +323,19 @@ case $1 in
     msg "hr"
     list_package_conf
   ;;
-  *)
-    msg "h1" "Processing all package actions?"
+  -p | --processing)
+    msg "h1" "Processing all packages?"
     read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
     package_processing
+  ;;
+  -h | --help | *)
+    msg "h1" "help"
+    msg "note" "Usage: enso.sh [OPTION]"
+    msg "note" "Mandatory arguments to long options are mandatory for short options too."
+    msg "txt" "-m, --install    setting menu for enso"
+    msg "txt" "-l, --list       list distribution and packages settings"
+    msg "txt" "-p, --processing processing all packages"
+    msg "txt" "-h, --help       this help"
 esac
 
 unset ENSO_HOME

@@ -76,9 +76,10 @@ msg() {
       printf "%s\n" "${t2}"
       printf "${bg_col_red}%*s${col_normal}\n" ${cols}
       echo
-      cat "$_scriptdir/stderr.log"
+      if [[ -f "stderr.log" ]]; then
+        cat "stderr.log"
+      fi
       read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
-      exit "${2}"
       ;;
     *)
       printf "%s\n" "${col_normal}${1}"
@@ -88,5 +89,13 @@ msg() {
 
 run_cmd() {
   msg "note" "run command: ${1}"
-  $1 > $_scriptdir/stdout.log 2> $_scriptdir/stderr.log && msg "txt" "${1}... passed" || msg "guru_meditation" "$?"
+  $1 > ./stdout.log 2> ./stderr.log && msg "txt" "${1}... passed" || enso_error ${?}
  }
+
+enso_error() {
+  _err=${1}
+  msg "guru_meditation" "${_err}"
+  if [[ ${_err} -ne 0 ]]; then
+    return ${_err}
+  fi
+}

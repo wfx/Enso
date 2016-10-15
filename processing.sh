@@ -21,15 +21,8 @@
 main() {
   # Prepare working directory
   # Removing old log files
-  msg "h1" "main"
   _scriptdir=$(dirname $0) # main working directory
   run_cmd "cd $_scriptdir"
-  if [[ -f "stdout.log" ]]; then
-    run_cmd "rm stdout.log"
-  fi
-  if [[ -f "stderr.log" ]]; then
-    run_cmd "rm stderr.log"
-  fi
   _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
   _srcdir=${_srcdir#"./"}
   _filename=$(basename ${pkg_source[url]}) # ! git is not filename... i can ignore this.
@@ -38,10 +31,9 @@ main() {
 init() {
   # Source Directoy:
   # Use existing one or get the source (archive or git)
-  msg "h1" "init"
-  msg "h2" "${pkg_source[package]} source"
-  _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
-  _srcdir=${_srcdir#"./"}
+  msg "h2" "stage: init ${pkg_source[package]} source"
+  #_srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
+  #_srcdir=${_srcdir#"./"}
   if [[ -d $_srcdir ]]; then
     msg "txt" "found directoy $_srcdir"
   else
@@ -51,7 +43,6 @@ init() {
         if [[ -f $_filename ]]; then # filename (whitout url)
           msg "txt" "found archive $_filename"
         else
-          msg "txt" "download archive... "
           wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || msg "guru_meditation" "$?" # want the progess
         fi
         msg "txt" "extract archive... "
@@ -59,29 +50,26 @@ init() {
       ;;
       git)
         if [[ -z ${pkg_source[release]} ]]; then
-          msg "txt" "git clone $(basename ${pkg_source[url]}) branch ${pkg_source[release]}"
           run_cmd "git clone ${pkg_source[url]}"
         else
-          msg "txt" "git clone $(basename ${pkg_source[url]})"
           run_cmd "git clone --branch ${pkg_source[release]} ${pkg_source[url]}"
         fi
       ;;
     esac
+    _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
+    _srcdir=${_srcdir#"./"}
   fi
-  _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
-  _srcdir=${_srcdir#"./"}
   run_cmd "cd $_srcdir"
 }
 
 prepare() {
   # Environment
-  msg "h1" "prepare"
-  msg "h2" "check environment"
+  msg "h2" "stage: prepare..."
   if [[ -z "${cfg_prepare[prefix]}" ]]
     then
       msg "alert" "prefix is not defined"
     else
-      msg "h2" "check for prefix in PATH..."
+      msg "note" "check for prefix in PATH..."
       if [[ "$PATH" == ?(*:)"${cfg_prepare[prefix]}/bin"?(:*) ]]
         then
           msg "txt" "prefix is set"
@@ -89,7 +77,7 @@ prepare() {
           msg "txt" "set: ${cfg_prepare["prefix"]}/bin"
           export PATH="${cfg_prepare["prefix"]}/bin:$PATH"
       fi
-      msg "h2" "check for prefix in PKG_CONFIG_PATH..."
+      msg "note" "check for prefix in PKG_CONFIG_PATH..."
       if [[ "$PKG_CONFIG_PATH" == ?(*:)"${cfg_prepare["prefix"]}/lib/pkgconfig"?(:*) ]]
         then
           msg "txt" "PKG_CONFIG_PATH is set"
@@ -97,7 +85,7 @@ prepare() {
           msg "txt" "set: ${cfg_prepare["prefix"]}/lib/pkgconfig"
           export PKG_CONFIG_PATH="${cfg_prepare["prefix"]}/lib/pkgconfig:$PKG_CONFIG_PATH"
       fi
-      msg "h2" "check for prefix in LD_LIBRARY_PATH..."
+      msg "note" "check for prefix in LD_LIBRARY_PATH..."
       if [[ "$LD_LIBRARY_PATH" == ?(*:)"${cfg_prepare[prefix]}/lib"?(:*) ]]
         then
           msg "txt" "LD_LIBRARY_PATH is set"
@@ -114,10 +102,9 @@ prepare() {
 }
 
 patch() {
-  msg "h1" "patch"
+  msg "h2" "stage: patch..."
   if [[ -f "patch.sh" ]]
     then
-      msg "h2" "processing..."
       run_cmd "patch -p0 -i $_scriptdir/pkg.patch"
     else
       msg "txt" "nothing to patch."
@@ -125,7 +112,7 @@ patch() {
 }
 
 build() {
-  msg "h1" "build"
+  msg "h2" "stage: build..."
   if [[ -f "$_scriptdir/build.sh" ]]; then
     msg "note" "running build.sh"
     run_cmd "$_scriptdir/build.sh"
@@ -135,20 +122,18 @@ build() {
         msg "quote_c"
         if [[ -f "autogen.sh" ]] || [[ -f "configure" ]]; then
           if [[ -f "autogen.sh" ]]; then
-              msg "h2" "run autogen.sh ..."
               run_cmd "./autogen.sh"
           fi
           if [[ -f "configure" ]]; then
-              msg "h2" "configure ..."
               run_cmd "./configure ${cfg_prepare[options]}"
           fi
         else
           msg "alert" "can not find autogen.sh or configure.sh script?!"
-          if [ "${opt_enso[ignore_all]}" == "yes" ]
+          if [ "${opt_enso[ignore_missing]}" == "yes" ]
             then
               msg "alert" "i have to ignore it"
             else
-              msg "txt" "to ignore this, set \$opt_enso[ignore_all]=\"yes\""
+              msg "txt" "to ignore it set: ignore_missing = enabled"
               exit
           fi
         fi
@@ -163,7 +148,7 @@ build() {
 }
 
 install() {
-  msg "h1" "install"
+  msg "h2" "stage: install..."
   if [[ -f "$_scriptdir/install.sh" ]]; then
     msg "note" "${pkg_source[language]} running install.sh"
     run_cmd "$_scriptdir/install.sh"
@@ -187,10 +172,9 @@ install() {
 
 # some extra works (install a xsession file etc.)
 post_install() {
-  msg "h2" "post install..."
+  msg "h2" "stage: post install..."
   if [[ -f "$_scriptdir/post_install.sh" ]]
     then
-      msg "txt" "found..."
       run_cmd "$_scriptdir/post_install.sh"
     else
       msg "txt" "nothing todo"
@@ -198,28 +182,30 @@ post_install() {
 }
 
 uninstall() {
-  msg "h1" "uninstall"
-  if [[ -f "$_scriptdir/uninstall.sh" ]]; then
-    msg "alert" "${pkg_source[language]} running uninstall.sh"
-    run_cmd "$_scriptdir/uninstall.sh"
-  else
-    case ${pkg_source[language]} in
-       c)
-        run_cmd "sudo make uninstall"
-      ;;
-      python)
-        run_cmd "sudo python setup.py uninstall"
-      ;;
-    esac
+  msg "h2" "stage: uninstall..."
+  if [[ -d $_srcdir ]]; then
+    run_cmd "cd ${_srcdir}"
+    if [[ -f "$_scriptdir/uninstall.sh" ]]; then
+      msg "alert" "${pkg_source[language]} running uninstall.sh"
+      run_cmd "$_scriptdir/uninstall.sh"
+    else
+      case ${pkg_source[language]} in
+        c)
+          run_cmd "sudo make uninstall"
+        ;;
+        python)
+          run_cmd "sudo python setup.py uninstall"
+        ;;
+      esac
+    fi
   fi
 }
 
 # cleaning up something (remove a xsession file etc.)
 post_uninstall() {
-  msg "h2" "post uninstall..."
+  msg "h2" "stage: post uninstall..."
   if [[ -f "$_scriptdir/post_uninstall.sh" ]]
     then
-      msg "txt" "found... "
       run_cmd "$_scriptdir/post_uninstall.sh"
     else
       msg "txt" "nothing todo"
@@ -227,7 +213,7 @@ post_uninstall() {
 }
 
 cleaning() {
-  msg "h2" "cleaning..."
+  msg "h2" "stage: cleaning..."
   run_cmd "cd ${_scriptdir}"
   if [[ -d ${_srcdir} ]]; then
     run_cmd "shopt -s extglob"
@@ -236,46 +222,62 @@ cleaning() {
   if [[ -f "${_filename}" ]]; then
     run_cmd "sudo rm ${_filename}"
   fi
+  if [[ -f "stdout.log" ]]; then
+    run_cmd "rm stdout.log"
+  fi
+  if [[ -f "stderr.log" ]]; then
+    run_cmd "rm stdout.log"
+  fi
 }
+
+#log_package_processing() {
+#  echo "$(date +%Y/%m/%d_%T): ${package_index[${i}]}:${package_name[${i}]}:${package_action[${i}]}:exitcode ${?}" >> "${ENSO_HOME}/enso.log"
+#}
 
 # =============================================================
 # set -x  #debug
 # =============================================================
 
 . $ENSO_HOME/tools.sh
+  main
 
-msg "h1" "${pkg_source[description]}"
+# ===========================================================================
 
-main         # main things
-
-if [[ "$1" == "install" ]]; then
-  init         # getting source
-  prepare      # set environment and
-  patch        # .
-  build        # .
-  install      # .
-  post_install # .
-elif [[ "$1" == "reinstall" ]]; then
-  run_cmd "cd ${_srcdir}"
-  uninstall      # .
-  post_uninstall # .
-  cleaning
-  init         # getting source
-  prepare      # set environment and
-  patch        # .
-  build        # .
-  install      # .
-  post_install # .
-elif [[ "$1" == "uninstall" ]]; then
-  run_cmd "cd ${_srcdir}"
-  uninstall      # .
-  post_uninstall # .
-elif [[ "$1" == "cleanup" ]]; then
-  run_cmd "cd ${_srcdir}"
-  cleaning
-else
-  msg "h2" "usage"
-  msg "note" "call me with: install || uninstall"
-fi
-
+case $1 in
+  -i | --install)
+    msg "h1" "install"
+    msg "h1" "${pkg_source[description]}"
+    main
+    init         # getting source
+    prepare      # set environment and
+    patch        # if we have a patch.sh
+    build        # or run youre own build.sh
+    install      # or run youre own install.sh
+    post_install # if we have a post_install.sh
+  ;;
+  -r | --reinstall)
+    $0 -u        # call myself to uninstall
+    $0 -c        # call myself to cleanup
+    $0 -i        # call myself to install
+  ;;
+  -u | --uninstall)
+    msg "h1" "uninstall"
+    main
+    uninstall
+    post_uninstall
+  ;;
+  -c | cleanup)
+    msg "h1" "cleanup"
+    main
+    cleaning
+  ;;
+  -h | --help | *)
+    msg "h1" "help"
+    msg "note" "Usage: processing.sh [OPTION]"
+    msg "note" "Mandatory arguments to long options are mandatory for short options too."
+    msg "txt" "-i, --install    getting source, build and install it"
+    msg "txt" "-r, --reinstall  reinstall the source"
+    msg "txt" "-u, --uninstall  uninstall the source"
+    msg "txt" "-c, --cleanup    cleanup the tree (TODO: rename this)"
+esac
 exit
