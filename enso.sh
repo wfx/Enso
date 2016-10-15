@@ -319,7 +319,7 @@ load_distribution_conf
 msg "h2" "load package configuration"
 load_package_conf
 msg "h2" "log timestap"
-echo "$(date %Y/%m/%d_%T)" >> "${ENSO_HOME}/enso.log"
+echo "$(date +%Y/%m/%d_%T)" >> "${ENSO_HOME}/enso.log"
 
 # ===========================================================================
 case $1 in
