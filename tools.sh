@@ -55,6 +55,9 @@ msg() {
     "note")
       printf "%s\n" "${fg_col_note}${2}"
       ;;
+    "quote")
+      printf "%s\n" "${fg_col_quote}${2}"
+    ;;
     "quote_c")
       printf "%s\n" "${fg_col_quote}C Code!" "One lang to rule them all," "One lang to find them," "One lang to bring them all and in the enlightenment bind them."
       ;;
@@ -89,10 +92,10 @@ run_cmd() {
   if [[ ${1} == *"sudo"* ]]; then # oh sudo command!
     msg "hr"
     msg "alert" "${1}"
-    $1 > ${_path_log}/stdout.log 2> ${_path_log}/stderr.log && msg "alert" "command: ${1}... passed" || enso_error ${?}
+    $1 > ${_path_log}/stdout.log 2> ${_path_log}/stderr.log && msg "alert" "command: ${1}  ... passed" || enso_error ${?}
     msg "hr"
   else
-    $1 > ${_path_log}/stdout.log 2> ${_path_log}/stderr.log && msg "txt" "command: ${1}... passed" || enso_error ${?}
+    $1 > ${_path_log}/stdout.log 2> ${_path_log}/stderr.log && msg "txt" "command: ${1}  ... passed" || enso_error ${?}
   fi
 }
 
