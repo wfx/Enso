@@ -44,9 +44,9 @@ init() {
         if [[ -f $_filename ]]; then # filename (whitout url)
           msg "txt" "found archive $_filename"
         else
-            # test if resource accesable
-            run_cmd "wget --spider ${pkg_source[url]} -nv"
-            wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || msg "guru_meditation" "$?" # want the progess
+            # test if i can get the resource.... works with git but not with archive :/
+            #run_cmd "wget --spider ${pkg_source[url]} -nv"
+            wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || enso_error ${?} # want the progess
         fi
         msg "txt" "extract archive ${_filename}... "
         run_cmd "tar -xf ${_filename}"
@@ -107,9 +107,11 @@ prepare() {
 
 patch() {
   msg "h2" "stage: patch..."
-  if [[ -f "patch.sh" ]]
+  if [[ -f "${_scriptdir}/patch.sh" ]]
     then
-      run_cmd "patch -p0 -i $_scriptdir/pkg.patch"
+      # something like: patch -p0 -i $_scriptdir/patch.txt
+      # source it so we can use vars, tools etc.
+      . "${_scriptdir}/patch.sh"
     else
       msg "txt" "nothing to patch."
   fi
@@ -117,9 +119,9 @@ patch() {
 
 build() {
   msg "h2" "stage: build..."
-  if [[ -f "$_scriptdir/build.sh" ]]; then
+  if [[ -f "${_scriptdir}/build.sh" ]]; then
     msg "note" "running build.sh"
-    run_cmd "$_scriptdir/build.sh"
+    . "${_scriptdir}/build.sh" # source it so we can use vars, tools etc.
   else
     case "${pkg_source[language]}" in
       c)
@@ -153,9 +155,9 @@ build() {
 
 install() {
   msg "h2" "stage: install..."
-  if [[ -f "$_scriptdir/install.sh" ]]; then
+  if [[ -f "${_scriptdir}/install.sh" ]]; then
     msg "note" "${pkg_source[language]} running install.sh"
-    run_cmd "$_scriptdir/install.sh"
+    . "${_scriptdir}/install.sh"  # source it so we can use vars, tools etc.
   else
     case "${pkg_source[language]}" in
       c)
@@ -177,11 +179,11 @@ install() {
 # some extra works (install a xsession file etc.)
 post_install() {
   msg "h2" "stage: post install..."
-  if [[ -f "$_scriptdir/post_install.sh" ]]
+  if [[ -f "${_scriptdir}/post_install.sh" ]]
     then
-      run_cmd "$_scriptdir/post_install.sh"
+      . "${_scriptdir}/post_install.sh" # source it so we can use vars, tools etc.
     else
-      msg "txt" "nothing todo"
+      msg "txt" "nothing todo."
   fi
 }
 
@@ -189,9 +191,8 @@ uninstall() {
   msg "h2" "stage: uninstall..."
   if [[ -d $_srcdir ]]; then
     run_cmd "cd ${_srcdir}"
-    if [[ -f "$_scriptdir/uninstall.sh" ]]; then
-      msg "alert" "${pkg_source[language]} running uninstall.sh"
-      run_cmd "$_scriptdir/uninstall.sh"
+    if [[ -f "${_scriptdir}/uninstall.sh" ]]; then
+      . "$_scriptdir/uninstall.sh" # source it so we can use vars, tools etc.
     else
       case ${pkg_source[language]} in
         c)
@@ -202,15 +203,17 @@ uninstall() {
         ;;
       esac
     fi
+  else
+    msg "note" "source directoy not found."
   fi
 }
 
 # cleaning up something (remove a xsession file etc.)
 post_uninstall() {
   msg "h2" "stage: post uninstall..."
-  if [[ -f "$_scriptdir/post_uninstall.sh" ]]
+  if [[ -f "${_scriptdir}/post_uninstall.sh" ]]
     then
-      run_cmd "$_scriptdir/post_uninstall.sh"
+      . "${_scriptdir}/post_uninstall.sh"  # source it so we can use vars, tools etc.
     else
       msg "txt" "nothing todo"
   fi
