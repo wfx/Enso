@@ -108,10 +108,11 @@ package_processing() {
   fi
   msg "h1" "Processing all packages..."
   for i in "${!package_name[@]}"; do
+    msg "h1" "Process ${package_name[$i]}"
     if [[ "${package_action[$i]}" == "none" ]]; then
       msg "note" "nothing todo for: ${package_name[$i]}"
     else
-      msg "h1" "Process ${package_name[$i]}"
+      msg "hr"
       if [[ ! -x "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" ]]; then
         msg "note" "make pkgsrc.sh executable..."
         run_cmd "chmod +x ${ENSO_HOME}/${package_tree[$i]}/pkgsrc.sh"
