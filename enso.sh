@@ -332,7 +332,7 @@ case $1 in
     msg "h1" "help"
     msg "note" "Usage: enso.sh [OPTION]"
     msg "note" "Mandatory arguments to long options are mandatory for short options too."
-    msg "txt" "-m, --install    setting menu for enso"
+    msg "txt" "-m, --menu       setting menu for enso"
     msg "txt" "-l, --list       list distribution and packages settings"
     msg "txt" "-p, --processing processing all packages"
     msg "txt" "-h, --help       this help"
