@@ -44,7 +44,7 @@ msg() {
       printf "%*s${col_normal}\n" $(($cols - ${#2}))
       ;;
     "hr")
-      printf '%*s\n' "$cols" | tr ' ' '-'
+      printf "${col_normal}%*s\n" "${cols}" | tr " " "-"
       ;;
     "txt")
       printf "%s\n" "${fg_col_txt}${2}"
@@ -75,11 +75,6 @@ msg() {
       printf "%s\n" "${t1}"
       printf "%s\n" "${t2}"
       printf "${bg_col_red}%*s${col_normal}\n" ${cols}
-      echo
-      if [[ -f "stderr.log" ]]; then
-        cat "stderr.log"
-      fi
-      read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
       ;;
     *)
       printf "%s\n" "${col_normal}${1}"
@@ -88,13 +83,29 @@ msg() {
 }
 
 run_cmd() {
-  msg "note" "run command: ${1}"
-  $1 > ./stdout.log 2> ./stderr.log && msg "txt" "${1}... passed" || enso_error ${?}
- }
+  if [[ ${_path_log} == "" ]]; then
+    _path_log="." # is _path_log not set then use ./
+  fi
+  if [[ ${1} == *"sudo"* ]]; then # oh sudo command!
+    msg "hr"
+    msg "alert" "${1}"
+    $1 > ${_path_log}/stdout.log 2> ${_path_log}/stderr.log && msg "alert" "command: ${1}... passed" || enso_error ${?}
+    msg "hr"
+  else
+    $1 > ${_path_log}/stdout.log 2> ${_path_log}/stderr.log && msg "txt" "command: ${1}... passed" || enso_error ${?}
+  fi
+}
 
 enso_error() {
   _err=${1}
   msg "guru_meditation" "${_err}"
+  echo
+  if [[ -f "${_path_log}/stderr.log" ]]; then
+    cat "${_path_log}/stderr.log"
+  else
+    msh "alert" "stderr.log is missing!"
+  fi
+  read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
   if [[ ${_err} -ne 0 ]]; then
     return ${_err}
   fi
