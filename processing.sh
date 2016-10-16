@@ -21,11 +21,12 @@
 main() {
   # Prepare working directory
   # Removing old log files
-  _scriptdir=$(dirname $0) # main working directory
-  run_cmd "cd $_scriptdir"
+  _scriptdir=$(dirname $0) # processing.sh is included from pkgsrc.sh (_scriptdir == pkgsrc home dir)
+  run_cmd "cd ${_scriptdir}"
   _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
   _srcdir=${_srcdir#"./"}
   _filename=$(basename ${pkg_source[url]}) # ! git is not filename... i can ignore this.
+  _path_log="${_scriptdir}"
 }
 
 init() {
@@ -43,10 +44,12 @@ init() {
         if [[ -f $_filename ]]; then # filename (whitout url)
           msg "txt" "found archive $_filename"
         else
-          wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || msg "guru_meditation" "$?" # want the progess
+            # test if resource accesable
+            run_cmd "wget --spider ${pkg_source[url]} -nv"
+            wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || msg "guru_meditation" "$?" # want the progess
         fi
-        msg "txt" "extract archive... "
-        run_cmd "tar -xf $_filename"
+        msg "txt" "extract archive ${_filename}... "
+        run_cmd "tar -xf ${_filename}"
       ;;
       git)
         if [[ -z ${pkg_source[release]} ]]; then
@@ -58,6 +61,7 @@ init() {
     esac
     _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
     _srcdir=${_srcdir#"./"}
+    _path_log="${_scriptdir}/${_srcdir}"
   fi
   run_cmd "cd $_srcdir"
 }
@@ -95,7 +99,7 @@ prepare() {
       fi
   fi
 
-  if [[ -z "${cfg_prepare[cflags]}" ]]; then
+  if [[ "${cfg_prepare[cflags]}" != "" ]]; then
     msg "txt" "set: CFLAGS to ${cfg_prepare[cflags]}"
     export CFLAGS="${cfg_prepare[cflags]}"
   fi
@@ -137,7 +141,7 @@ build() {
               exit
           fi
         fi
-        msg "h2" "make..."
+        run_cmd "make clean"
         run_cmd "make"
       ;;
       python)
@@ -266,7 +270,7 @@ case $1 in
     uninstall
     post_uninstall
   ;;
-  -c | cleanup)
+  -c | --cleanup)
     msg "h1" "cleanup"
     main
     cleaning
