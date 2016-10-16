@@ -12,7 +12,15 @@ pkg_source[release]=""                                 # optional release number
 
 cfg_prepare[prefix]="/usr/local"                       # prefix default is /usr/local
 cfg_prepare[cflags]="-O2 -ffast-math -march=native -g -ggdb3"  # optional cflags
-cfg_prepare[options]="--prefix=/usr/local --enable-systemd"  # optionial configure settings TODO: maybe go back to regex here the prefix
+cfg_prepare[options]="
+--prefix=/usr/local \
+--enable-systemd \
+--disable-static --disable-tslib \
+--enable-xinput22 \
+--enable-multisense --enable-systemd \
+--enable-image-loader-webp --enable-harfbuzz \
+--enable-liblz4 \
+--enable-drm --enable-elput"  # optionial configure settings TODO: maybe go back to regex here the prefix
 # ==================================================== #
 
 . ${ENSO_HOME}/processing.sh
