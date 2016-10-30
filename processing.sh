@@ -18,273 +18,318 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-main() {
-  # Prepare working directory
-  # Removing old log files
-  _scriptdir=$(dirname $0) # processing.sh is included from pkgsrc.sh (_scriptdir == pkgsrc home dir)
-  run_cmd "cd ${_scriptdir}"
-  _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
-  _srcdir=${_srcdir#"./"}
-  _filename=$(basename ${pkg_source[url]}) # ! git is not filename... i can ignore this.
-  _path_log="${_scriptdir}"
-}
-
-init() {
-  # Source Directoy:
-  # Use existing one or get the source (archive or git)
-  msg "h2" "stage: init ${pkg_source[package]} source"
-  #_srcdir=$(find . -mindepth 1 -maxdepth 1 -type d) # get source directory (we dont create one so the one i find is it)
-  #_srcdir=${_srcdir#"./"}
-  if [[ -d $_srcdir ]]; then
-    msg "txt" "found directoy $_srcdir"
-  else
-    case "${pkg_source[package]}" in
-      archive)
-        _filename=$(basename ${pkg_source[url]})
-        if [[ -f $_filename ]]; then # filename (whitout url)
-          msg "txt" "found archive $_filename"
-        else
-            # test if i can get the resource.... works with git but not with archive :/
-            #run_cmd "wget --spider ${pkg_source[url]} -nv"
-            wget -q --show-progress ${pkg_source[url]} && msg "txt" "... passed." || enso_error ${?} # want the progess
-        fi
-        msg "txt" "extract archive ${_filename}... "
-        run_cmd "tar -xf ${_filename}"
-      ;;
-      git)
-        if [[ -z ${pkg_source[release]} ]]; then
-          run_cmd "git clone ${pkg_source[url]}"
-        else
-          run_cmd "git clone --branch ${pkg_source[release]} ${pkg_source[url]}"
-        fi
-      ;;
-    esac
-    _srcdir=$(find . -mindepth 1 -maxdepth 1 -type d)
-    _srcdir=${_srcdir#"./"}
-    _path_log="${_scriptdir}/${_srcdir}"
-  fi
-  run_cmd "cd $_srcdir"
-}
-
-prepare() {
-  # Environment
-  msg "h2" "stage: prepare..."
-  if [[ -z "${cfg_prepare[prefix]}" ]]
-    then
-      msg "alert" "prefix is not defined"
+# name: prepare git
+# desc: check for the source directory, clone or update it
+prepare_git(){
+  if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then  # check for source directory
+    echo "src directory: missing"
+    _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)  # maybe some older one to delete
+    if [[ -d "$_src_dir" ]]; then
+      echo "remove old source directory $_src_dir"
+      sudo rm -rf "$_src_dir" && echo " [ pass ]" >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    fi
+    git ls-remote ${pkg_url} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # check the validity of a remote git repository
+    if [[ -n ${pkg_rel} ]]; then
+      git clone --branch ${pkg_rel} ${pkg_url} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
     else
-      msg "note" "check for prefix in PATH..."
-      if [[ "$PATH" == ?(*:)"${cfg_prepare[prefix]}/bin"?(:*) ]]
-        then
-          msg "txt" "prefix is set"
-        else
-          msg "txt" "set: ${cfg_prepare["prefix"]}/bin"
-          export PATH="${cfg_prepare["prefix"]}/bin:$PATH"
-      fi
-      msg "note" "check for prefix in PKG_CONFIG_PATH..."
-      if [[ "$PKG_CONFIG_PATH" == ?(*:)"${cfg_prepare["prefix"]}/lib/pkgconfig"?(:*) ]]
-        then
-          msg "txt" "PKG_CONFIG_PATH is set"
-        else
-          msg "txt" "set: ${cfg_prepare["prefix"]}/lib/pkgconfig"
-          export PKG_CONFIG_PATH="${cfg_prepare["prefix"]}/lib/pkgconfig:$PKG_CONFIG_PATH"
-      fi
-      msg "note" "check for prefix in LD_LIBRARY_PATH..."
-      if [[ "$LD_LIBRARY_PATH" == ?(*:)"${cfg_prepare[prefix]}/lib"?(:*) ]]
-        then
-          msg "txt" "LD_LIBRARY_PATH is set"
-        else
-          msg "txt" "set: ${cfg_prepare[prefix]}/lib"
-          export LD_LIBRARY_PATH="${cfg_prepare[prefix]}/lib:$LD_LIBRARY_PATH"
-      fi
-  fi
-
-  if [[ "${cfg_prepare[cflags]}" != "" ]]; then
-    msg "txt" "set: CFLAGS to ${cfg_prepare[cflags]}"
-    export CFLAGS="${cfg_prepare[cflags]}"
-  fi
-}
-
-patch() {
-  msg "h2" "stage: patch..."
-  if [[ -f "${_scriptdir}/patch.sh" ]]
-    then
-      # something like: patch -p0 -i $_scriptdir/patch.txt
-      # source it so we can use vars, tools etc.
-      . "${_scriptdir}/patch.sh"
-    else
-      msg "txt" "nothing to patch."
-  fi
-}
-
-build() {
-  msg "h2" "stage: build..."
-  if [[ -f "${_scriptdir}/build.sh" ]]; then
-    msg "note" "running build.sh"
-    . "${_scriptdir}/build.sh" # source it so we can use vars, tools etc.
-  else
-    case "${pkg_source[language]}" in
-      c)
-        msg "quote_c"
-        if [[ -f "autogen.sh" ]] || [[ -f "configure" ]]; then
-          if [[ -f "autogen.sh" ]]; then
-              run_cmd "./autogen.sh"
-          fi
-          if [[ -f "configure" ]]; then
-              run_cmd "./configure ${cfg_prepare[options]}"
-          fi
-        else
-          msg "alert" "can not find autogen.sh or configure.sh script?!"
-          if [ "${opt_enso[ignore_missing]}" == "yes" ]
-            then
-              msg "alert" "i have to ignore it"
-            else
-              msg "txt" "to ignore it set: ignore_missing = enabled"
-              exit
-          fi
-        fi
-        run_cmd "make clean"
-        run_cmd "make"
-      ;;
-      python)
-        msg "quote_python"
-      ;;
-    esac
-  fi
-}
-
-install() {
-  msg "h2" "stage: install..."
-  if [[ -f "${_scriptdir}/install.sh" ]]; then
-    msg "note" "${pkg_source[language]} running install.sh"
-    . "${_scriptdir}/install.sh"  # source it so we can use vars, tools etc.
-  else
-    case "${pkg_source[language]}" in
-      c)
-        run_cmd "sudo -E make install"
-      ;;
-      python)
-        # sudo -E to have the environment vars
-        run_cmd "sudo -E python3 setup.py install"
-      ;;
-      *)
-        msg "guru_meditation" "Unknow code (use install.sh)!"
-      ;;
-    esac
-  fi
-  # needed on Linux to update linker library database
-  run_cmd "sudo ldconfig"
-}
-
-# some extra works (install a xsession file etc.)
-post_install() {
-  msg "h2" "stage: post install..."
-  if [[ -f "${_scriptdir}/post_install.sh" ]]
-    then
-      . "${_scriptdir}/post_install.sh" # source it so we can use vars, tools etc.
-    else
-      msg "txt" "nothing todo."
-  fi
-}
-
-uninstall() {
-  msg "h2" "stage: uninstall..."
-  if [[ -d $_srcdir ]]; then
-    run_cmd "cd ${_srcdir}"
-    if [[ -f "${_scriptdir}/uninstall.sh" ]]; then
-      . "$_scriptdir/uninstall.sh" # source it so we can use vars, tools etc.
-    else
-      case ${pkg_source[language]} in
-        c)
-          run_cmd "sudo make uninstall"
-        ;;
-        python)
-          run_cmd "sudo python setup.py uninstall"
-        ;;
-      esac
+      git clone ${pkg_url} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    fi
+    _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)
+    if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then  # change source directory name
+      mv "$_src_dir" "$src_DIR" && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # rename it to archivename whitout extension
     fi
   else
-    msg "note" "source directoy not found."
+    cd ${pkg_DIR[${pkg_ID}]}/${src_DIR} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    git remote update && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    if [[ -n ${pkg_rel} ]]; then
+      git checkout ${pkg_rel} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    fi
+    cd ${pkg_DIR} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
   fi
 }
-
-# cleaning up something (remove a xsession file etc.)
-post_uninstall() {
-  msg "h2" "stage: post uninstall..."
-  if [[ -f "${_scriptdir}/post_uninstall.sh" ]]
-    then
-      . "${_scriptdir}/post_uninstall.sh"  # source it so we can use vars, tools etc.
+# name: prepare archive
+# desc: check for the source directory, extract or download archive, rename source directory
+prepare_archive(){
+  if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then  # check for source directory
+    echo "src directory: missing"
+    _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)  # maybe some older one to delete
+    if [[ -d "$_src_dir" ]]; then
+      echo "remove old source directory $_src_dir"
+      sudo rm -rf "$_src_dir" && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    fi
+    if [[ -f "${pkg_url##*/}" ]]; then  # archive name whitout url
+      echo "archive: found"
     else
-      msg "txt" "nothing todo"
+      echo "archive: missing... check remote url and download archive"
+      wget --spider ${pkg_url} -nv  && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # check remote archive file access.
+      wget -q --show-progress ${pkg_url} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    fi
+    tar -xf "${pkg_url##*/}" && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # archive name whitout url
+    _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)
+    if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then  # change source directory name
+      mv "$_src_dir" "$src_DIR" && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # rename it to archivename whitout extension
+    fi
   fi
 }
+# Name       : prepare_source
+# Description: Download the source and extract the archive or clone it ( depending on what we have )
+prepare_source() {
+  # prepare source (build) directory
+  # if we found one then try to update it.
+  # if we find none then get archive and extract it or clone git repository
+  load_package_source_definition
+  src_DIR=${pkg_url##*/}  # remove url
+  src_DIR=${src_DIR%.${pkg_ext}}  # remove ext ( used for source directory )
+  if [[ ${pkg_ACTION[${pkg_ID}]} = "cleanup" ]]; then
+    msg "note" "no nedd to get any type of source"
+  else
+    cd "${pkg_DIR[${pkg_ID}]}" >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    case "${pkg_ext}" in
+      git)
+        prepare_git
+      ;;
+      tar.*)
+        prepare_archive
+      ;;
+      *)
+        # TODO: add support for "prepare_package.sh" as fall back
+        enso_error "1" "Unknow type: ${pkg_ext}"
+        exit 1
+      ;;
+    esac
+  fi
+  return 0  # success
+}
+# Name       : prepare_environment
+# Description: Prepare (build) environment
+prepare_environment() {
+  msg "h2" "prepare (build) environment"
 
-cleaning() {
-  msg "h2" "stage: cleaning..."
-  run_cmd "cd ${_scriptdir}"
-  if [[ -d ${_srcdir} ]]; then
-    run_cmd "shopt -s extglob"
-    run_cmd "sudo rm -rf ${_srcdir}"
+  if [[ -n ${src_prefix} ]]; then
+    src_CONFIGURE="--prefix=${src_prefix} ${src_configure}"
+    if [[ "$PATH" == ?(*:)"${src_prefix}/bin"?(:*) ]]
+      then
+        msg "txt" "prefix is in PATH"
+      else
+        msg "txt" "adding ${src_prefix}/bin to PATH"
+        export PATH="${src_prefix}/bin:$PATH"
+    fi
+    if [[ "$PKG_CONFIG_PATH" == ?(*:)"${src_prefix}/lib/pkgconfig"?(:*) ]]
+      then
+        msg "txt" "prefix is in PKG_CONFIG_PATH"
+      else
+        msg "txt" "adding ${src_prefix}/lib/pkgconfig to PKG_CONFIG_PATH"
+        export PKG_CONFIG_PATH="${src_prefix}/lib/pkgconfig:$PKG_CONFIG_PATH"
+    fi
+    if [[ "$LD_LIBRARY_PATH" == ?(*:)"${cfg_prepare[prefix]}/lib"?(:*) ]]
+      then
+        msg "txt" "prefix is in LD_LIBRARY_PATH"
+      else
+        msg "txt" "adding ${src_prefix}/lib to LD_LIBRARY_PATH"
+        export LD_LIBRARY_PATH="${src_prefix}/lib:$LD_LIBRARY_PATH"
+    fi
+  else
+    msg "alert" "prefix is not defined!"
   fi
-  if [[ -f "${_filename}" ]]; then
-    run_cmd "sudo rm ${_filename}"
+  # set CFLAGS and CXXFLAGS
+  if [[ "${src_cflags}" != "" ]]; then
+    msg "txt" "setting CFLAGS to ${src_cflags}"
+    export CFLAGS="${src_cflags}"
   fi
-  if [[ -f "stdout.log" ]]; then
-    run_cmd "rm stdout.log"
+  if [[ "${src_cxxflags}" != "" ]]; then
+    msg "txt" "setting CXXFLAGS to ${src_cxxflags}"
+    export CFLAGS="${src_cxxflags}"
   fi
-  if [[ -f "stderr.log" ]]; then
-    run_cmd "rm stdout.log"
+
+  return 0  # success
+}
+# Name       : c_configure
+# Description: Configure c source code
+# Name       : build
+# Description: Source code build/compile processing
+build() {
+  msg "h2" "build"
+  # patch
+  # something like: patch -p0 -i ${pkg_DIR[${pkg_ID}]}/patchfile
+  if [[ -f "${pkg_DIR[${pkg_ID}]}/patch.sh" ]]; then
+    msg "note" "patch source code" #
+    . "${pkg_DIR[${pkg_ID}]}/patch.sh"  # source it so we can use vars, tools etc.
+  fi
+  # Enter source directoy
+  msg "cmd" "cd ${pkg_DIR[${pkg_ID}]}/${src_DIR}"
+  cd "${pkg_DIR[${pkg_ID}]}/${src_DIR}" >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+  # build
+  case "${src_build}" in
+    c)
+      msg "quote_c"
+      # Configure...
+      if [[ -f "autogen.sh" ]] || [[ -f "configure" ]]; then
+        if [[ -f "autogen.sh" ]]; then
+          exec_c_autogen
+        fi
+        if [[ -f "configure" ]]; then
+          exec_c_configure
+        fi
+        # clean...
+        exec_c_make_clean
+        # make...
+        exec_c_make
+      else
+        # 100: Missing: autogen or configure script
+        enso_error "${err_MSG[100]}" "100"
+      fi
+    ;;
+    python)
+      msg "quote_python"  # nothing more.
+    ;;
+    *)
+      if [[ -f "${pkg_DIR[${pkg_ID}]}/build.sh" ]]; then
+        msg "note" "Utilize: build.sh"
+        . "${pkg_DIR[${pkg_ID}]}/build.sh"  # source it so we can use vars, tools etc.
+      else
+        enso_error "5sec" "Unknow build (use build.sh)!"
+        exit 1
+      fi
+    ;;
+  esac
+}
+# Name       : install
+# Description: Install software
+install() {
+  msg "h2" "install"
+  case "${src_build}" in
+    c)
+      exec_c_make_install
+    ;;
+    python)
+      exec_py_setup_install
+    ;;
+    *)
+      if [[ -f "${pkg_DIR[${pkg_ID}]}/install.sh" ]]; then
+        msg "note" "Utilize: install.sh"
+        . "${pkg_DIR[${pkg_ID}]}/install.sh"  # source it so we can use vars, tools etc.
+      else
+        enso_error "1" "Unknow install (use install.sh)!"
+        exit 1
+      fi
+    ;;
+  esac
+  # update linker library database
+  exec_ldconfig
+  # some extra works (install a xsession file etc... )
+  if [[ -f "${pkg_DIR[${pkg_ID}]}/post_install.sh" ]]; then
+    msg "note" "Utilize: post_install.sh"
+    . "${pkg_DIR[${pkg_ID}]}/post_install.sh"  # source it so we can use vars, tools etc.
   fi
 }
+# Name       : uninstall
+# Description: Uninstall installed software
+uninstall() {
+  msg "h2" "uninstall"
+  # Enter source directoy
+  msg "cmd" "cd ${pkg_DIR[${pkg_ID}]}/${src_DIR}"
+  cd ${pkg_DIR[${pkg_ID}]}/${src_DIR} >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+  case ${src_build} in
+    c)
+      # Configure...
+      if [[ -f "autogen.sh" ]] || [[ -f "configure" ]]; then
+        if [[ -f "autogen.sh" ]]; then
+          exec_c_autogen
+        fi
+        if [[ -f "configure" ]]; then
+          exec_c_configure
+        fi
+      else
+        # 100: Missing: autogen or configure script
+        enso_error "${err_MSG[100]}" "100"
+      fi
+      exec_c_make_uninstall
+    ;;
+    python)
+      exec_py_setup_uninstall
+    ;;
+    *)
+      if [[ -f "${pkg_DIR[${pkg_ID}]}/uninstall.sh" ]]; then
+        msg "note" "Utilize: uninstall.sh"
+        . "$pkg_DIR/uninstall.sh"  # source it so we can use vars, tools etc.
+      fi
+    ;;
+  esac
+  # update linker library database
+  msg "cmd_sudo" "sudo ldconfig"
+  sudo ldconfig >> "$stdout" 2> "$stderr" &&  msg "cmd_sudo_passed" || enso_error "1" "$?"
 
-#log_package_processing() {
-#  echo "$(date +%Y/%m/%d_%T): ${package_index[${i}]}:${package_name[${i}]}:${package_action[${i}]}:exitcode ${?}" >> "${ENSO_HOME}/enso.log"
-#}
+  # cleaning up something (remove a xsession file etc.)
+  if [[ -f "${pkg_DIR[${pkg_ID}]}/post_uninstall.sh" ]]; then
+    msg "note" "Utilize: uninstall.sh"
+    . "${pkg_DIR[${pkg_ID}]}/post_uninstall.sh"  # source it so we can use vars, tools etc.
+  fi
+}
+# Name       : cleardir
+# Description: Remove all created or downloaded files
+cleanup() {
+  msg "h1" "cleanup"
+  # Remove source directory
+  if [[ -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then
+    msg "cmd" "shopt -s extglob"
+    shopt -s extglob >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    msg "cmd_sudo" "sudo rm -rf ${pkg_DIR[${pkg_ID}]}/${src_DIR}"
+    sudo rm -rf "${pkg_DIR[${pkg_ID}]}/$src_DIR" >> "$stdout" 2> "$stderr" &&  msg "cmd_sudo_passed" || enso_error "1" "$?"
+  else
+    msg "note" "none source directory to remove"
+  fi
+  # Remove archive file
+  if [[ -f "${pkg_DIR[${pkg_ID}]}/${pkg_url##*/}" ]]; then
+    msg "cmd" "sudo rm ${pkg_DIR[${pkg_ID}]}/${pkg_url##*/}"
+    sudo rm "${pkg_DIR[${pkg_ID}]}/${pkg_url##*/}" >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+  else
+    msg "note" "none archive file to remove"
+  fi
+  # Remove stdout.log file
+  if [[ -f "${pkg_DIR[${pkg_ID}]}/stdout.log" ]]; then
+    msg "cmd" "rm ${pkg_DIR[${pkg_ID}]}/stdout.log"
+    rm "${pkg_DIR[${pkg_ID}]}/stdout.log" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+  else
+    msg "note" "none stdout.log file to remove"
+  fi
+  # Remove stderr.log file
+  if [[ -f "${pkg_DIR[${pkg_ID}]}/stderr.log" ]]; then
+    msg "cmd" "rm ${pkg_DIR[${pkg_ID}]}/stderr.log"
+    rm "${pkg_DIR[${pkg_ID}]}/stderr.log" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+  else
+    msg "note" "none stderr.log file to remove"
+  fi
+}
+# Name       : main processing
+# Description: Processing the choosen action
+#              called from enso.sh: package_processing() {}
+processing_main() {
 
-# =============================================================
-# set -x  #debug
-# =============================================================
+  declare stdout="${pkg_DIR[$[pkg_ID]]}/stdout.log"
+  declare stderr="${pkg_DIR[$[pkg_ID]]}/stderr.log"
 
-. $ENSO_HOME/tools.sh
-  main
-
-# ===========================================================================
-
-case $1 in
-  -i | --install)
-    msg "h1" "install"
-    msg "h1" "${pkg_source[description]}"
-    main
-    init         # getting source
-    prepare      # set environment and
-    patch        # if we have a patch.sh
-    build        # or run youre own build.sh
-    install      # or run youre own install.sh
-    post_install # if we have a post_install.sh
-  ;;
-  -r | --reinstall)
-    $0 -u        # call myself to uninstall
-    $0 -c        # call myself to cleanup
-    $0 -i        # call myself to install
-  ;;
-  -u | --uninstall)
-    msg "h1" "uninstall"
-    main
-    uninstall
-    post_uninstall
-  ;;
-  -c | --cleanup)
-    msg "h1" "cleanup"
-    main
-    cleaning
-  ;;
-  -h | --help | *)
-    msg "h1" "help"
-    msg "note" "Usage: processing.sh [OPTION]"
-    msg "note" "Mandatory arguments to long options are mandatory for short options too."
-    msg "txt" "-i, --install    getting source, build and install it"
-    msg "txt" "-r, --reinstall  reinstall the source"
-    msg "txt" "-u, --uninstall  uninstall the source"
-    msg "txt" "-c, --cleanup    cleanup the tree (TODO: rename this)"
-esac
-exit
+  case "--${pkg_ACTION[${pkg_ID}]}" in
+    --install)
+      prepare_source
+      prepare_environment
+      build
+      install
+    ;;
+    --uninstall)
+      prepare_source
+      uninstall
+    ;;
+    --cleanup)
+      prepare_source
+      cleanup
+    ;;
+    *)
+      msg "h1" "help"
+      msg "note" "Usage: processing.sh [action]"
+      msg "note" "actions:"
+      msg "txt" "--install    install/upgrade a single package"
+      msg "txt" "--remove     remove a single package"
+      msg "txt" "--cleanup    cleanup, remove log and downloaded files (TODO: rename it?)"
+      exit # show help nothing more.
+  esac
+}

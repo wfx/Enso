@@ -1,18 +1,8 @@
-#!/bin/bash
-
-declare -A pkg_source
-declare -A cfg_prepare
-
-# SETTING ============================================ #
-pkg_source[description]=""                             # Short description (optional)
-pkg_source[url]=""                                     # full url (address/filename.extension)
-pkg_source[package]="archive"                          # archive -> use tar || git -> git clone TODO: get this information from file
-pkg_source[language]="c"                               # c|python TODO: is it empty then looks for build.sh
-pkg_source[release]=""                                 # optional release number (used for git)
-
-cfg_prepare[prefix]="/usr/local"                       # prefix default is /usr/local
-cfg_prepare[cflags]="-O2 -ffast-math -march=native -g -ggdb3"  # optional cflags
-cfg_prepare[options]=""                                # optionial configure settings TODO: maybe go back to regex from here the prefix
-# ==================================================== #
-
-. ${ENSO_HOME}/processing.sh
+pkg_url=""        # full archive or git resource url (url/name.extension)
+pkg_ext=""        # archive compressing type (extension) or git
+pkg_rel=""        # optional git release (branch) for enso_pkg_ext[n]=git
+src_build=""      # build for c, python(3) code or "" to use build.sh
+src_prefix=""     # optional install prefix (/usr/local)
+src_cflags=""     # optional cflags
+src_cxxflags=""   # optional cxxflags
+src_configure=""  # optional configure options (you dont need to add a prefix is src_prefix set)

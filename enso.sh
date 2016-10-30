@@ -18,125 +18,54 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-load_package_conf() {
-  # load package.conf
-  # defined available packages in build order:
-  # 0;efl;tree/enlightenment/rel/libs/efl;install;build description
-  # ...
-  _mti=0 # min tab size for index
-  _mtn=0 # min tab size for name
-  _mtt=0 # min tab size for tree
-  _mta=9 # min tab size for action
-  _mtd=0 # min tab size for description
-  exec 3<"package.conf"
-  while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
-    # get build index and seek
-    i=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-    if [[ ${_mti} -le ${#i} ]]; then
-      _mti=${#i}
-    fi
-    # get name and seek
-    n=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-    if [[ ${_mtn} -le ${#n} ]]; then
-      _mtn=${#n}
-    fi
-    # get tree (path) and seek
-    t=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-    if [[ ${_mtt} -le ${#t} ]]; then
-      _mtt=${#t}
-    fi
-    # get action (path) and seek
-    a=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-    if [[ ${_mta} -le ${#a} ]]; then
-      _mtt=${#a}
-    fi
-    # get description, next line
-    d=${var%%;*};
-    if [[ ${_mtd} -le ${#d} ]]; then
-      _mtd=${#d}
-    fi
-
-    package_index[${i}]="${i}"
-    package_name[${i}]="${n}"
-    package_tree[${i}]="${t}"
-    package_action[${i}]="${a}"
-    package_description[${i}]="${d}"
-  done
-}
-
-save_package_conf() {
-  rm "${ENSO_HOME}/package.conf"
-  for i in "${package_index[@]}"; do
-    echo "${i};${package_name[$i]};${package_tree[$i]};${package_action[$i]};${package_description[$i]}" >> "${ENSO_HOME}/package.conf"
-  done
-}
-
-load_distribution_conf() {
-  exec 3<"${ENSO_HOME}/distribution.conf"
-  while IFS=';' read -r -u 3 var || [[ -n "$var" ]]; do
-    # get distributin name and seek
-    distribution[0]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-    # get install build essential option (enabled|disabled)
-    distribution[1]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-    # get install graphical system option (enabled|disabled)
-    distribution[2]=${var%%;*}; [ "$var" = "$i" ] && var='' || var="${var#*;}"
-    # get build packages option (enabled|disabled)
-    distribution[3]=${var%%;*};
-  done
-}
-
-save_distribution_conf() {
-  rm "${ENSO_HOME}/distribution.conf"
-  echo "${distribution[0]};${distribution[1]};${distribution[2]};${distribution[3]}" > "${ENSO_HOME}/distribution.conf"
-}
-
 package_processing() {
-  if [[ "${distribution[0]}" != "none" ]]; then
-    msg "h1" "Prepare distribution ${distribution[0]}"
-    if [[ "${distribution[1]}" == "enabled" ]]; then
+  if [[ "${dist_NAME}" != "none" ]]; then
+    msg "h1" "Prepare distribution ${Distribution[0]}"
+    if [[ "${dist_BUILD_ESSENTIAL}" == "enabled" ]]; then
       msg "h2" "Install build essential"
-      "${ENSO_HOME}/distribution/${distribution[0]}/build_essential.sh"
+      "${ENSO_HOME}/distribution/${dist_NAME}/build_essential.sh"
     fi
-    if [[ "${distribution[2]}" == "enabled" ]]; then
+    if [[ "${dist_GRAPHICAL_SYSTEM}" == "enabled" ]]; then
       msg "h2" "Install graphical system"
-      "${ENSO_HOME}/distribution/${distribution[0]}/install_graphics_system.sh"
+      "${ENSO_HOME}/distribution/${dist_NAME}/install_graphics_system.sh"
     fi
-    if [[ "${distribution[3]}" == "enabled" ]]; then
+    if [[ "${dist_BUILD_PACKAGES}" == "enabled" ]]; then
       msg "h2" "Build packages"
-      # not yet implemented
+      # not yet implemented... v2.0
     fi
   fi
   msg "h1" "Processing all packages..."
-  for i in "${!package_name[@]}"; do
-    msg "h1" "Process ${package_name[$i]}"
-    if [[ "${package_action[$i]}" == "none" ]]; then
-      msg "note" "nothing todo for: ${package_name[$i]}"
+  for pkg_ID in "${!pkg_NAME[@]}"; do
+    if [[ "${pkg_ACTION[$pkg_ID]}" == "none" ]]; then
+      echo "nothing todo for: ${pkg_NAME[$pkg_ID]}" >> "${ENSO_HOME}/stdout.log"
     else
       msg "hr"
-      if [[ ! -x "$ENSO_HOME/${package_tree[$i]}/pkgsrc.sh" ]]; then
-        msg "note" "make pkgsrc.sh executable..."
-        run_cmd "chmod +x ${ENSO_HOME}/${package_tree[$i]}/pkgsrc.sh"
-      fi
-      "${ENSO_HOME}/${package_tree[$i]}/pkgsrc.sh" "--${package_action[$i]}"
+      msg "h1" "Process ${pkg_ACTION[$pkg_ID]} ${pkg_NAME[$pkg_ID]}"
+      echo "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#" >> "${ENSO_HOME}/stdout.log"
+      echo "START: $(date +%Y/%m/%d)" >> "${ENSO_HOME}/stdout.log"
+      echo "processing ${pkg_ACTION[$pkg_ID]} ${pkg_NAME[$pkg_ID]}" >> "${ENSO_HOME}/stdout.log"
+      processing_main
+      msg "note" "processing ${pkg_ACTION[$pkg_ID]} ${pkg_NAME[$pkg_ID]} done" >> "${ENSO_HOME}/stdout.log"
+      echo "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#" >> "${ENSO_HOME}/stdout.log"
     fi
   done
 }
 
 sub_menu_prepare_distribution() {
-  # distribution[0] name
-  # distribution[1] install build essential enabled|disabled
-  # distribution[2] install graphical system enabled|disabled
-  # distribution[3] build packages enabled|disabled
+  # Distribution[0] name
+  # Distribution[1] install build essential enabled|disabled
+  # Distribution[2] install graphical system enabled|disabled
+  # Distribution[3] build packages enabled|disabled
   _reply=""
   while [[ $_reply != "e" ]]; do
     clear
     msg "h1" "Prepare:"
     msg "hr"
-    printf "  Distribution ........... : %s\n"  "${distribution[0]}"
+    printf "  Distribution ........... : %s\n"  "${Distribution[0]}"
     msg "hr"
-    msg "1 Install build essential  : ${distribution[1]}"
-    msg "2 Install graphical system : ${distribution[2]}"
-    #msg "3 Build packages           : ${distribution[3]}"
+    msg "1 Install build essential  : ${Distribution[1]}"
+    msg "2 Install graphical system : ${Distribution[2]}"
+    #msg "3 Build packages           : ${Distribution[3]}"
     msg "hr"
     msg "h2" "[#] ... change option [#][d|e]"
     msg "h2" "[q] ... quit"
@@ -163,7 +92,7 @@ sub_menu_prepare_distribution() {
 }
 
 menu_prepare_distribution() {
-  # distribution[0] name
+  # Distribution[0] name
   _reply=""
   while [[ $_reply != "e" ]]; do
     clear
@@ -182,19 +111,19 @@ menu_prepare_distribution() {
     _reply=$REPLY
     case $_reply in
       0)
-        distribution[0]="none"
+        Distribution[0]="none"
         save_distribution_conf
       ;;
       1)
-        distribution[0]="archlinux"
+        Distribution[0]="archlinux"
         sub_menu_prepare_distribution
       ;;
       2)
-        distribution[0]="debian"
+        Distribution[0]="debian"
         sub_menu_prepare_distribution
       ;;
       3)
-        distribution[0]="ubuntu"
+        Distribution[0]="ubuntu"
         sub_menu_prepare_distribution
       ;;
       q | Q)
@@ -210,69 +139,78 @@ menu_main() {
   while [[ $_reply != "q" ]]; do
     clear
     msg "h1" "Main menu: "
-    list_distribution_conf
+    #list_distribution_conf
     msg "hr"
     list_package_conf
     msg "hr"
-    msg "h2" "set all package to action"
-    msg "h2" "[n] none      | [c] cleanup"
-    msg "h2" "[i] install   | [r] reinstall | [u] uninstall"
-    msg "h2" "set action for package [#][n/c/i/r/u]"
+    msg "h2" "[n|i|u|c] .. : action for all package"
+    msg "h2" "[#][n|i|u|c] : action for single package"
+    #msg "h2" "[d] ... prepare distribution"
+    msg "h2" "[p] ........ : processing all actions"
+    msg "h2" "[q] ........ : quit"
+    msg "txt" "[n] none, [i] install, [u] uninstall, [c] cleanup"
     msg "hr"
-    msg "h2" "[d] ... prepare distribution"
-    msg "h2" "[p] ... processing all package action"
-    msg "h2" "[q] ... quit"
     read -p "> "
     _reply=$REPLY
     case $_reply in
-      d | D) menu_prepare_distribution ;;
       n | N)
-        for i in "${package_index[@]}"; do
-          package_action[${i}]="none"
+        for i in "${!pkg_NAME[@]}"; do
+          pkg_ACTION[${i}]="none"
         done
-        save_package_conf ;;
-      c | C)
-        for i in "${package_index[@]}"; do
-          package_action[${i}]="cleanup"
-        done
-        save_package_conf ;;
+        save_package_conf
+      ;;
       i | I)
-        for i in "${package_index[@]}"; do
-          package_action[${i}]="install"
+        for i in "${!pkg_NAME[@]}"; do
+          pkg_ACTION[${i}]="install"
         done
-        save_package_conf ;;
-      r | R)
-        for i in "${package_index[@]}"; do
-          package_action[${i}]="reinstall"
-        done
-        save_package_conf ;;
+        save_package_conf
+      ;;
       u | U)
-        for i in "${package_index[@]}"; do
-          package_action[${i}]="uninstall"
+        for i in "${!pkg_NAME[@]}"; do
+          pkg_ACTION[${i}]="uninstall"
         done
-        save_package_conf ;;
+        save_package_conf
+      ;;
+      c | C)
+        for i in "${!pkg_NAME[@]}"; do
+          pkg_ACTION[${i}]="cleanup"
+        done
+        save_package_conf
+      ;;
+      #d | D) menu_prepare_distribution ;;
       p | P)
         package_processing
         msg "h2" "All done"
         exit
-        ;;
+      ;;
       q | Q)
         clear
         echo "Have a lot of fun!"
-        exit ;;
+        exit
+      ;;
       *)
         # index is ${_reply%?}
         # action is reply minus number ${_reply#${_reply%?}}
         case ${_reply#${_reply%?}} in
-          n | N) package_action[${_reply%?}]="none" ;;
-          c | C) package_action[${_reply%?}]="cleanup" ;;
-          i | I) package_action[${_reply%?}]="install" ;;
-          r | R) package_action[${_reply%?}]="reinstall" ;;
-          u | U) package_action[${_reply%?}]="uninstall" ;;
+          n | N)
+            pkg_ACTION[${_reply%?}]="none"
+            save_package_conf
+          ;;
+          i | I)
+            pkg_ACTION[${_reply%?}]="install"
+            save_package_conf
+          ;;
+          u | U)
+            pkg_ACTION[${_reply%?}]="uninstall"
+            save_package_conf
+          ;;
+          c | C)
+            pkg_ACTION[${_reply%?}]="cleanup"
+            save_package_conf
+          ;;
           *) ;;
         esac
-        save_package_conf
-        ;;
+      ;;
     esac
   done
   clear
@@ -281,37 +219,83 @@ menu_main() {
 }
 
 list_distribution_conf() {
-  if [[ ${distribution[0]} != "none" ]]; then
-    printf "Distribution %s install:\n" "${distribution[0]}"
-    printf "Build essential: %s / Graphical system: %s \n" "${distribution[1]}" "${distribution[2]}"
-    #printf "Build packages ......... : %s\n" "${distribution[3]}"
+  if [[ ${dist_NAME} != "none" ]]; then
+    printf "Distribution %s install:\n" "${dist_NAME}"
+    printf "Build essential: %s / Graphical system: %s \n" "${dist_BUILD_ESSENTIAL}" "${dist_GRAPHICAL_SYSTEM}"
+    #printf "Build packages ......... : %s\n" "${Distribution[3]}"
   else
-    printf "Distribution %s:\n" "${distribution[0]}"
+    printf "Distribution %s:\n" "${dist_NAME}"
   fi
 }
 
 list_package_conf() {
+  local _i
   printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtd}s\n" "#" "NAME" "ACTION" "DESCRIPTION (BUILD DEPENDENCIES)"
-  for i in "${!package_name[@]}"; do
-    printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtd}s\n" "${i}" "${package_name[$i]}" "${package_action[$i]}" "${package_description[$i]}"
+  for _i in "${!pkg_NAME[@]}"; do
+    printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtd}s\n" "${_i}" "${pkg_NAME[$_i]}" "${pkg_ACTION[$_i]}" "${pkg_DESCRIPTION[$_i]}"
+  done
+}
+
+list_package_actions() {
+  # list all none none action's
+  local _i
+  printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtd}s\n" "#" "NAME" "ACTION" "DESCRIPTION (BUILD DEPENDENCIES)"
+  for _i in "${!pkg_NAME[@]}"; do
+    if [[ ! "${pkg_ACTION[$_i]}" = "none" ]]; then
+      printf "%${_mti}s %-${_mtn}s %-${_mta}s %-${_mtd}s\n" "${_i}" "${pkg_NAME[$_i]}" "${pkg_ACTION[$_i]}" "${pkg_DESCRIPTION[$_i]}"
+    fi
   done
 }
 
 # ===========================================================================
 
-[[ $ENSO_HOME ]] || export ENSO_HOME=$(pwd)
-. $ENSO_HOME/tools.sh
+# set -o errexit  # script exit when a command fails ( add "... || true" to allow fail)
+# set -o nounset  # script exit when it use undeclared variables
+# set -o xtrace   # trace for debugging
+# set -o pipefail # exit status of last command that throws a non-zero exit code
 
-declare -a package_index
-declare -a package_name
-declare -a package_tree
-declare -a package_action
+declare -r VERSION="0.1.0"
+declare -r TRUE=0
+declare -r FALSE=1
+declare -r ENSO_HOME=$(pwd)       # Enso's home ( root )
+declare -a err_MSG
 
-msg "h1" "Prepare ENSO"
-msg "h2" "load distribution configuration"
-load_distribution_conf
-msg "h2" "load package configuration"
-load_package_conf
+err_MSG[100]="Missing: autogen or configure script"
+err_MSG[101]="Access: remote resource is not available"
+
+declare opt_IGNORE_CONFIGURE=$FALSE
+
+declare dist_NAME                 # Distribution name
+declare dist_BUILD_ESSENTIAL      # Install build essentials
+declare dist_GRAPHICAL_SYSTEM     # Install graphical system
+declare dist_BUILD_PACKAGES       # Build distribution packages
+
+declare pkg_ID                    # Package id ( pkg_ARRAY[pkg_ID] )
+declare -a pkg_NAME               # Package name
+declare -a pkg_DIR                # Package directory ( processing directory )
+declare -a pkg_ACTION             # Package action ( install, uninstall, update, remove )
+declare -a pkg_DESCRIPTION        # Package description
+declare pkg_url                   # ful archive or git resource url (url/name minus extension)
+declare pkg_ext                   # archive compressing type (extension) or git
+declare pkg_rel                   # optional git release (branch) for enso_pkg_ext[n]=git
+
+declare src_DIR                   # Source directory
+declare src_build                 # c, python(3) or "" to use build.sh
+declare src_prefix                # optional install prefix ( /usr/local )
+declare src_cflags                # optional cflags ( -O2... )
+declare src_cxxflags              # optional cxxflags
+declare src_configure             # optional configure options (you dont need to add a prefix is src_prefix set)
+
+# ===========================================================================
+
+#TODO: more include logic ( -l dont need processing.sh ... )
+. "${ENSO_HOME}/utils.sh"
+. "${ENSO_HOME}/data.sh"
+. "${ENSO_HOME}/exec_cmd.sh"
+. "${ENSO_HOME}/processing.sh"
+load_package_conf  #load_distribution_conf
+
+msg "h1" "enso"
 
 # ===========================================================================
 case $1 in
@@ -320,24 +304,29 @@ case $1 in
   ;;
   -l | --list)
     msg "h1" "List settings"
-    list_distribution_conf
+    #list_distribution_conf
     msg "hr"
     list_package_conf
   ;;
   -p | --processing)
     msg "h1" "Processing all packages?"
+    #list_distribution_conf
+    msg "hr"
+    list_package_actions
+    msg "hr"
     read -p "Press [Enter] to continue or [CTRL+C] to cancel... "
     package_processing
   ;;
   -h | --help | *)
     msg "h1" "help"
+    msg "note" "The Enlightenment software installer."
+    msg "note" "Version: $VERSION"
     msg "note" "Usage: enso.sh [OPTION]"
-    msg "note" "Mandatory arguments to long options are mandatory for short options too."
     msg "txt" "-m, --menu       setting menu for enso"
     msg "txt" "-l, --list       list distribution and packages settings"
     msg "txt" "-p, --processing processing all packages"
     msg "txt" "-h, --help       this help"
 esac
 
-unset ENSO_HOME
+tput sgr0
 exit

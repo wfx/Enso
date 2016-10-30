@@ -1,7 +1,8 @@
+#!/bin/bash
 msg "quote" "Devel, devel, on the wall. Ain't you got no sense at all?"
-if [[ ! -d "${_scriptdir}/${_srcdir}/build" ]]; then
-  run_cmd "mkdir build"
+if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}/build" ]]; then
+  mkdir "${pkg_DIR[${pkg_ID}]}/${src_DIR}/build"
 fi
-run_cmd "cd build"
-run_cmd "cmake .."
-run_cmd "make"
+cd "${pkg_DIR[${pkg_ID}]}/${src_DIR}/build"
+msg "cmd" "cmake .." ; cmake .. && msg "cmd_passed"
+msg "cmd" "make" ; make && msg "cmd_passed"

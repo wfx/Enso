@@ -1,5 +1,7 @@
 #!/bin/bash
-echo "POST UNINSTALL"
+msg "note" "POST UNINSTALL"
 # a stupid fix for stupid login manager that don't look in /usr/local
 # DaveMDS quote :)
-sudo rm /usr/share/xsessions/enlightenment.desktop
+if [[ -f "/usr/share/xsessions/enlightenment.desktop" ]]; then
+  sudo rm /usr/share/xsessions/enlightenment.desktop
+fi
