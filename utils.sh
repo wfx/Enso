@@ -116,14 +116,14 @@ enso_error() {
 
 spinner()
 {
-  local pid=$!
-  local spin='-\|/'
+  local _pid=$!
+  local _spin='-\|/'
 
-  local i=0
-  while kill -0 $pid 2>/dev/null
+  local _i=0
+  while kill -0 $_pid 2>/dev/null
   do
-    i=$(( (i+1) %4 ))
-    printf "\r${spin:$i:1}"
+    _i=$(( (_i+1) %4 ))
+    printf "\r${_spin:$_i:1}"
     sleep .1
   done
 }
