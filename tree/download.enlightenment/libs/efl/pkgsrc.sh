@@ -5,8 +5,7 @@ src_build="c"
 src_prefix="/usr/local"
 src_cflags="-O2 -ffast-math -march=native -g -ggdb3"
 src_cxxflags=""
-src_configure="
---enable-systemd \
+src_configure="--enable-systemd \
 --disable-static --disable-tslib \
 --enable-xinput22 \
 --enable-multisense --enable-systemd \
