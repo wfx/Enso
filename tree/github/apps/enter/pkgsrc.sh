@@ -1,4 +1,4 @@
-pkg_url="https://github.com/DaveMDS/eluminance.git"
+pkg_url="https://github.com/wfx/enter.git"
 pkg_ext="git"
 pkg_rel=""
 src_build="python"
