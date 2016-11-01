@@ -61,11 +61,11 @@ exec_git_clone(){
   _rel=$1
   _url=$2
   if [[ -n ${_rel} ]]; then
-    msg "cmd" "git clone --branch ${_rel} ${_url}"
-    git clone --branch ${_rel} ${_url} >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    msg "cmd" "  git clone --branch ${_rel} ${_url}"
+    git clone --branch ${_rel} ${_url} >> "$stdout" 2> "$stderr" & spinner &&  msg "cmd_passed" || enso_error "1" "$?"
   else
-    msg "cmd" "git clone ${_url}"
-    git clone ${_url} >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    msg "cmd" "  git clone ${_url}"
+    git clone $_url >> "$stdout" 2> "$stderr" & spinner &&  msg "cmd_passed" || enso_error "1" "$?"
   fi
 }
 
