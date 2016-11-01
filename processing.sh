@@ -22,52 +22,48 @@
 # desc: check for the source directory, clone or update it
 prepare_git(){
   if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then  # check for source directory
-    echo "src directory: missing"
-    _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)  # maybe some older one to delete
+    msg "txt" "src directory: missing"
+    _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)  # get directory name
     if [[ -d "$_src_dir" ]]; then
-      echo "remove old source directory $_src_dir"
-      sudo rm -rf "$_src_dir" && echo " [ pass ]" >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+      msg "txt" "remove old source directory $_src_dir"
+      exec_rm_rf "$_src_dir"
     fi
-    git ls-remote ${pkg_url} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # check the validity of a remote git repository
-    if [[ -n ${pkg_rel} ]]; then
-      git clone --branch ${pkg_rel} ${pkg_url} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
-    else
-      git clone ${pkg_url} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
-    fi
+    exec_git_validate_remote ${pkg_url}
+    exec_git_clone ${pkg_rel} ${pkg_url}
     _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)
-    if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then  # change source directory name
-      mv "$_src_dir" "$src_DIR" && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # rename it to archivename whitout extension
+    if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then
+      # change source directory name to archivename whitout extension
+      exec_mv "$_src_dir" "$src_DIR"
     fi
   else
-    cd ${pkg_DIR[${pkg_ID}]}/${src_DIR} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
-    git remote update && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
-    if [[ -n ${pkg_rel} ]]; then
-      git checkout ${pkg_rel} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
-    fi
-    cd ${pkg_DIR} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+    exec_cd "${pkg_DIR[${pkg_ID}]}/${src_DIR}"
+    exec_git_remote_update
+    exec_git_checkout ${pkg_rel}
+    exec_cd "${pkg_DIR}"
   fi
 }
 # name: prepare archive
 # desc: check for the source directory, extract or download archive, rename source directory
 prepare_archive(){
   if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then  # check for source directory
-    echo "src directory: missing"
-    _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)  # maybe some older one to delete
+    msg "txt" "src directory: missing"
+    _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)  # get directory name
     if [[ -d "$_src_dir" ]]; then
-      echo "remove old source directory $_src_dir"
-      sudo rm -rf "$_src_dir" && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+      msg "txt" "remove old source directory $_src_dir"
+      exec_rm_rf "$_src_dir"
     fi
     if [[ -f "${pkg_url##*/}" ]]; then  # archive name whitout url
-      echo "archive: found"
+      msg "txt" "archive: found"
     else
-      echo "archive: missing... check remote url and download archive"
-      wget --spider ${pkg_url} -nv  && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # check remote archive file access.
-      wget -q --show-progress ${pkg_url} && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
+      msg "txt" "archive: missing... check remote url and download archive"
+      exec_archive_validate_remote "${pkg_url}"
+      exec_archive_download "${pkg_url}"
     fi
-    tar -xf "${pkg_url##*/}" && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # archive name whitout url
+    exec_archive_extract "${pkg_url##*/}"
     _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)
-    if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then  # change source directory name
-      mv "$_src_dir" "$src_DIR" && echo " [ pass ]"  >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"  # rename it to archivename whitout extension
+    if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then
+      # change source directory name to archivename whitout extension
+      exec_mv "$_src_dir" "$src_DIR"
     fi
   fi
 }
