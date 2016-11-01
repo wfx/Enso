@@ -29,7 +29,7 @@ prepare_git(){
       exec_rm_rf "$_src_dir"
     fi
     exec_git_validate_remote ${pkg_url}
-    exec_git_clone ${pkg_rel} ${pkg_url}
+    exec_git_clone "${pkg_rel}" "${pkg_url}"
     _src_dir=$(find ${pkg_DIR[${pkg_ID}]} -mindepth 1 -maxdepth 1 -type d)
     if [[ ! -d "${pkg_DIR[${pkg_ID}]}/${src_DIR}" ]]; then
       # change source directory name to archivename whitout extension
@@ -38,7 +38,7 @@ prepare_git(){
   else
     exec_cd "${pkg_DIR[${pkg_ID}]}/${src_DIR}"
     exec_git_remote_update
-    exec_git_checkout ${pkg_rel}
+    exec_git_checkout "${pkg_rel}" "${pkg_url}"
     exec_cd "${pkg_DIR}"
   fi
 }
