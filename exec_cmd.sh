@@ -113,8 +113,8 @@ exec_c_make_clean(){
 }
 
 exec_c_make(){
-  msg "cmd" "  make"
-  make >> "$stdout" 2> "$stderr" & spinner &&  msg "cmd_passed" || enso_error "10sec" "$?"
+  #msg "cmd" "make"
+  make >> "$stdout" 2> "$stderr" & spinner "make" &&  msg "cmd_passed" || enso_error "10sec" "$?"
 }
 
 exec_c_make_install(){

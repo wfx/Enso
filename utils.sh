@@ -114,16 +114,33 @@ enso_error() {
   esac
 }
 
-spinner()
-{
-  local _pid=$!
-  local _spin='-\|/'
-
-  local _i=0
+spinner(){
+  _txt=$1
+  _pid=$!
+  _s[0]="p     "
+  _s[1]="pl    "
+  _s[2]="ple   "
+  _s[3]="plea  "
+  _s[4]="pleas "
+  _s[5]="please"
+  _s[6]=" lease"
+  _s[7]="  ease"
+  _s[8]="   ase"
+  _s[9]="    se"
+  _s[10]="     e"
+  _s[11]="    t "
+  _s[12]="   it "
+  _s[13]="  ait "
+  _s[14]=" wait "
+  _s[15]=" wai  "
+  _s[16]=" wa   "
+  _s[17]=" w    "
+  _i=0
+  SECONDS=0
   while kill -0 $_pid 2>/dev/null
   do
-    _i=$(( (_i+1) %4 ))
-    printf "\r${_spin:$_i:1}"
+    _i=$(( (_i+1) %17 ))
+    printf "\r[ %02d:%02d ${_s[${_i-1}]:0}] $_txt " $((SECONDS/60)) $((SECONDS%60))
     sleep .1
   done
 }
