@@ -79,7 +79,11 @@ exec_git_checkout(){
 
 exec_archive_validate_remote(){
   # check remote archive file access.
-  _url=$1
+  _url="$1"
+  # thx to: http://stackoverflow.com/users/45375/mklement0
+  [[ $_url =~ ^https?://[^/]+ ]] && _url="${BASH_REMATCH[0]}"
+  #msg "cmd" "ping -c 2 ${_url}"
+  #ping -c 2 $_url >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
   msg "cmd" "wget --spider ${_url}"
   wget --spider ${_url} -nv >> "$stdout" 2> "$stderr" &&  msg "cmd_passed" || enso_error "1" "$?"
 }
