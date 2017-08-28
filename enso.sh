@@ -41,14 +41,125 @@ package_processing() {
     else
       msg "hr"
       msg "h1" "Process ${pkg_ACTION[$pkg_ID]} ${pkg_NAME[$pkg_ID]}"
-      echo "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#" >> "${ENSO_HOME}/stdout.log"
+      echo "---------------------------------" >> "${ENSO_HOME}/stdout.log"
       echo "START: $(date +%Y/%m/%d)" >> "${ENSO_HOME}/stdout.log"
       echo "processing ${pkg_ACTION[$pkg_ID]} ${pkg_NAME[$pkg_ID]}" >> "${ENSO_HOME}/stdout.log"
       processing_main
       msg "note" "processing ${pkg_ACTION[$pkg_ID]} ${pkg_NAME[$pkg_ID]} done" >> "${ENSO_HOME}/stdout.log"
-      echo "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#" >> "${ENSO_HOME}/stdout.log"
+      echo "---------------------------------" >> "${ENSO_HOME}/stdout.log"
     fi
   done
+}
+
+menu_create_edit_package() {
+  _reply=""
+  if [[ $1 != "" ]]; then
+    ed_pkg_id=$1
+    ed_pkg_name=${pkg_NAME[$1]}
+    ed_pkg_dir=${pkg_DIR[$1]}
+    ed_pkg_description=${pkg_DESCRIPTION[$1]}
+    load_package_source_definition
+    ed_pkg_url=$pkg_url
+    ed_pkg_ext=$pkg_ext
+    ed_pkg_rel=$pkg_rel
+    ed_src_build=$src_build
+    ed_src_prefix=$src_prefix
+    ed_src_cflags=$src_cflags
+    ed_src_cxxflags=$src_cxxflags
+    ed_src_configure=$src_configure
+  else
+    ed_pkg_id=""          # Build (order) identity
+    ed_pkg_name=""        # Package name
+    ed_pkg_dir=""         # Directory for the build source
+    ed_pkg_description="" # Description (name or give a link for some debending)
+    ed_pkg_url=""         # full archive or git resource url (url/name.extension)
+    ed_pkg_ext=""         # archive compressing type (extension) or git
+    ed_pkg_rel=""         # optional git release number (branch)
+    ed_src_build=""       # build for c, python(3) code or "" to use build.sh
+    ed_src_prefix=""      # optional install prefix (/usr/local)
+    ed_src_cflags=""      # optional cflags
+    ed_src_cxxflags=""    # optional cxxflags
+    ed_src_configure=""   # optional configure options (you dont need to add a prefix is src_prefix set)
+  fi
+  while [[ $_reply != "q" ]]; do
+    clear
+    msg "h1" "Create new package:"
+    msg "note" "ID         : Build (order) identity"
+    msg "note" "Name       : Package name"
+    msg "note" "Directory  : Directory for the build source"
+    msg "note" "Description: Description (name or give a link for some debending)"
+    msg "note" "URL        : full archive or git resource url (url/name.extension)"
+    msg "note" "Extension  : archive compressing type (extension) or git"
+    msg "note" "release    : optional git release number (branch)"
+    msg "note" "build      : build for c, python(3) code or "" to use build.sh"
+    msg "note" "prefix     : optional install prefix (/usr/local)"
+    msg "note" "cflags     : optional cflags"
+    msg "note" "cxxflags   : optional cxxflags"
+    msg "note" "configure  : optional configure options (you dont need to add a prefix is src_prefix set)"
+    msg "hr"
+    msg " 0 Id         : $ed_pkg_id"
+    msg " 1 Name       : $ed_pkg_name"
+    msg " 2 directoy   : $ed_pkg_dir"
+    msg " 3 description: $ed_pkg_description"
+    msg " 4 URL        : $ed_pkg_url"
+    msg " 5 Extension  : $ed_pkg_ext"
+    msg " 6 Release    : $ed_pkg_rel"
+    msg " 7 Build      : $ed_src_build"
+    msg " 8 Prefix     : $ed_src_prefix"
+    msg " 9 cflags     : $ed_src_prefix"
+    msg "10 cxxflags   : $ed_src_cxxflags"
+    msg "11 configure  : $ed_src_configure"
+    msg "hr"
+    msg "txt" "[q] quit, [s] save, [#] edit"
+    read -p "> "
+    _reply=$REPLY
+    case $_reply in
+      0)
+        read -e -p "ID: " -i "$ed_pkg_id" ed_pkg_id
+      ;;
+      1)
+        read -e -p "Name :" -i "$ed_pkg_name" ed_pkg_name
+      ;;
+      2)
+        read -e -p "Directory: " -i "$ed_pkg_dir" ed_pkg_dir
+      ;;
+      3)
+        read -e -p "Description: " -i "$ed_pkg_description" ed_pkg_description
+      ;;
+      4)
+        read -e -p "URL: " -i "$ed_pkg_url" ed_pkg_url
+      ;;
+      5)
+        read -e -p "Extension: " -i "$ed_pkg_ext" ed_pkg_ext
+      ;;
+      6)
+        read -e -p "Release: " -i "$ed_pkg_rel" ed_pkg_rel
+      ;;
+      7)
+        read -e -p "Build: " -i "$ed_src_build" ed_src_build
+      ;;
+      8)
+        read -e -p "Prefix: " -i "$ed_src_prefix" ed_src_prefix
+      ;;
+      9)
+        read -e -p "CFLAGS: " -i "$ed_src_cflags" ed_src_cflags
+      ;;
+      10)
+        read -e -p "CXXFLAGS: " -i "$ed_src_cxxflags" ed_src_cxxflags
+      ;;
+      11)
+        read -e -p "Configure: " -i "$ed_src_configure" ed_src_configure
+      ;;
+      s | S)
+        save_created_edit_package_conf
+        break
+      ;;
+      q | Q)
+        break
+      ;;
+    esac
+  done
+  menu_main
 }
 
 sub_menu_prepare_distribution() {
@@ -144,11 +255,11 @@ menu_main() {
     list_package_conf
     msg "hr"
     msg "h2" "[n|i|u|c] .. : action for all package"
-    msg "h2" "[#][n|i|u|c] : action for single package"
+    msg "h2" "[#][n|i|u|c|e] : action for single package"
     #msg "h2" "[d] ... prepare distribution"
     msg "h2" "[p] ........ : processing all actions"
     msg "h2" "[q] ........ : quit"
-    msg "txt" "[n] none, [i] install, [u] uninstall, [c] cleanup"
+    msg "txt" "[n] none, [i] install, [u] uninstall, [c] cleanup, [e] edit"
     msg "hr"
     read -p "> "
     _reply=$REPLY
@@ -178,6 +289,9 @@ menu_main() {
         save_package_conf
       ;;
       #d | D) menu_prepare_distribution ;;
+      e | E)
+        menu_create_edit_package
+      ;;
       p | P)
         package_processing
         msg "h2" "All done"
@@ -207,6 +321,9 @@ menu_main() {
           c | C)
             pkg_ACTION[${_reply%?}]="cleanup"
             save_package_conf
+          ;;
+          e | E)
+            menu_create_edit_package ${_reply%?}
           ;;
           *) ;;
         esac

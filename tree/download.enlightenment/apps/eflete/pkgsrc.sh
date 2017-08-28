@@ -1,4 +1,4 @@
-pkg_url="http://download.enlightenment.org/rel/apps/eflete/eflete-0.7.0.tar.gz"
+pkg_url="http://download.enlightenment.org/rel/apps/eflete/eflete-1.19.1.tar.gz"
 pkg_ext="tar.gz"
 pkg_rel=""
 src_build="c"

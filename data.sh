@@ -89,6 +89,42 @@ load_package_source_definition() {
   return 1
 }
 
+save_package_source_definition(){
+  if [[ -d "${pkg_DIR[${pkg_ID}]}" ]]; then
+    touch "${pkg_DIR[${pkg_ID}]}/pkgsrc.sh"
+    echo "$pkg_url" >> "${pkg_DIR[${pkg_ID}]}/pkgsrc.sh"
+    echo "$pkg_ext" >> "${pkg_DIR[${pkg_ID}]}/pkgsrc.sh"
+    echo "$pkg_rel" >> "${pkg_DIR[${pkg_ID}]}/pkgsrc.sh"
+    echo "$src_build" >> "${pkg_DIR[${pkg_ID}]}/pkgsrc.sh"
+    echo "$src_prefix" >> "${pkg_DIR[${pkg_ID}]}/pkgsrc.sh"
+    echo "$src_cflags" >> "${pkg_DIR[${pkg_ID}]}/pkgsrc.sh"
+    echo "$src_cxxflags" >> "${pkg_DIR[${pkg_ID}]}/pkgsrc.sh"
+    echo "$src_configure" >> "${pkg_DIR[${pkg_ID}]}/pkgsrc.sh"
+    return 0
+  else
+    return 1
+  fi
+}
+
+save_created_edit_package_conf(){
+  #if [[ -d "${ENSO_HOME}/${ed_pkg_DIR}" ]]; then
+    if [[ $ed_pkg_id -lt ${#pkg_NAME[@]} ]]; then
+      #inset
+      insert_at $ed_pkg_id $ed_pkg_name pkg_NAME
+      insert_at $ed_pkg_id $ed_pkg_DIR pkg_DIR
+      insert_at $ed_pkg_id "none" pkg_ACTION
+      insert_at $ed_pkg_id $ed_pkg_description pkg_DESCRIPTION
+    else
+      pkg_NAME[${ed_pkg_id}]=$ed_pkg_name
+      pkg_DIR[${ed_pkg_id}]=$ed_pkg_dir
+      pkg_ACTION[${ed_pkg_id}]="none"
+      pkg_DESCRIPTION[${ed_pkg_id}]=$ed_pkg_description
+    fi
+    #save_package_source_definition
+    #save_package_conf
+  #fi
+}
+
 load_distribution_conf() {
   # Using global defined variables
   # ENSO_HOME, dist_NAME, dist_BUILD_ESSENTIAL, dist_GRAPHICAL_SYSTEM, dist_BUILD_PACKAGES

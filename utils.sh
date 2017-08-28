@@ -114,6 +114,22 @@ enso_error() {
   esac
 }
 
+insert_at(){
+  # args
+  # $1: index
+  # $2: value
+  # $3: nameref
+  # example:
+  # ar=("a" "b" "c" "d" "e")
+  # insert_at "2" "here" ar
+  # echo "${ar[@]}" result is: a b here c d e
+  declare _i=$1
+  declare _v=$2
+  declare -n _a=$3
+  # "0 to index" "value" "index to lenght of array"
+  _a=("${_a[@]:0:_i}" "$_v" "${_a[@]:_i:${#_a[@]}}")
+}
+
 spinner(){
   _txt=$1
   _pid=$!

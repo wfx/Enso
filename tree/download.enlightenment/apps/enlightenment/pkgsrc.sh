@@ -1,4 +1,4 @@
-pkg_url="http://download.enlightenment.org/rel/apps/enlightenment/enlightenment-0.21.3.tar.gz"
+pkg_url="http://download.enlightenment.org/rel/apps/enlightenment/enlightenment-0.21.9.tar.gz"
 pkg_ext="tar.gz"
 pkg_rel=""
 src_build="c"

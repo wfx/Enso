@@ -1,4 +1,4 @@
-pkg_url="http://download.enlightenment.org/rel/bindings/python/python-efl-1.18.0.tar.gz"
+pkg_url="http://download.enlightenment.org/rel/bindings/python/python-efl-1.20.0.tar.gz"
 pkg_ext="tar.gz"
 pkg_rel=""
 src_build="python"
