@@ -2,7 +2,8 @@
 The Enlightenment software installer.<br>
 Enso is in between user and developer :)
 
-You can use to install E from source.<br>
+![Screenshot](https://github.com/wfx/enso/blob/master/screenshot.jpg)
+
 <br>
 Usage: enso.sh [OPTION]<br>
 -m, --menu       setting menu for enso<br>
@@ -10,22 +11,17 @@ Usage: enso.sh [OPTION]<br>
 -p, --processing processing all packages<br>
 -h, --help       this help<br>
 <br>
-Menu:<br>
-just enter the listed package number folwoing by one action key:<br>
 <br>
-Do this step to install a basic Enlightenment Desktopshell<br>
+For a basic Enlightenment Desktopshell<br>
 <br>
+enso.sh -m [Enter]
 0i + [Enter]<br>
 2i + [Enter]<br>
 4i + [Enter]<br>
 p + [Enter]<br>
 <br>
-Enso try now to get the sources, build and install all for you.<br>
-By any error it will show you a message and give you the option to break it.<br>
+Now enso get the sources, build and install all for you.<br>
 <br>
 
-![Screenshot](https://github.com/wfx/enso/blob/master/screenshot.jpg)
-
-
-Have a lot of fun.
+Have a lot of fun.<br>
 wfx
