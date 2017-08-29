@@ -14,7 +14,7 @@ Usage: enso.sh [OPTION]<br>
 <br>
 For a basic Enlightenment Desktopshell<br>
 <br>
-enso.sh -m [Enter]
+enso.sh -m [Enter]<br>
 0i + [Enter]<br>
 2i + [Enter]<br>
 4i + [Enter]<br>
