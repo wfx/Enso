@@ -1,16 +1,16 @@
 # Enso
-The Enlightenment software installer.
+The Enlightenment software installer.<br>
 Enso is in between user and developer :)
 
-You can use to install E from source.
-
-Usage: enso.sh [OPTION]
--m, --menu       setting menu for enso
--l, --list       list distribution and packages settings
--p, --processing processing all packages
--h, --help       this help
-
-Menu:
+You can use to install E from source.<br>
+<br>
+Usage: enso.sh [OPTION]<br>
+-m, --menu       setting menu for enso<br>
+-l, --list       list distribution and packages settings<br>
+-p, --processing processing all packages<br>
+-h, --help       this help<br>
+<br>
+Menu:<br>
 just enter the listed package number folwoing by one action key:
 
 Do this step to install a basic Enlightenment Desktopshell
