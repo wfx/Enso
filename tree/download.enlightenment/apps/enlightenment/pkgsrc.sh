@@ -1,5 +1,5 @@
-pkg_url="http://download.enlightenment.org/rel/apps/enlightenment/enlightenment-0.21.9.tar.gz"
-pkg_ext="tar.gz"
+pkg_url="http://download.enlightenment.org/rel/apps/enlightenment/enlightenment-0.22.1.tar.xz"
+pkg_ext="tar.xz"
 pkg_rel=""
 src_build="c"
 src_prefix="/usr/local"

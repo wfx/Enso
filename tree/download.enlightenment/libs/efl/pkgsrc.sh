@@ -1,5 +1,5 @@
-pkg_url="http://download.enlightenment.org/rel/libs/efl/efl-1.20.2.tar.gz"
-pkg_ext="tar.gz"
+pkg_url="http://download.enlightenment.org/rel/libs/efl/efl-1.20.6.tar.xz"
+pkg_ext="tar.xz"
 pkg_rel=""
 src_build="c"
 src_prefix="/usr/local"

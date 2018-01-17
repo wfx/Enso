@@ -1,5 +1,5 @@
-pkg_url="http://download.enlightenment.org/rel/apps/terminology/terminology-1.1.0.tar.gz"
-pkg_ext="tar.gz"
+pkg_url="http://download.enlightenment.org/rel/apps/terminology/terminology-1.1.1.tar.xz"
+pkg_ext="tar.xz"
 pkg_rel=""
 src_build="c"
 src_prefix="/usr/local"
