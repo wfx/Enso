@@ -1,6 +1,8 @@
+# A just for fun and dead bash scripting project :)
+
 # Enso
 The Enlightenment software installer.<br>
-Enso is in between user and developer :)
+Enso is in between user and developer ok not realy i started it to only do bash fun.
 
 ![Screenshot](https://github.com/wfx/enso/blob/master/screenshot.jpg)
 
