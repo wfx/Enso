@@ -1,4 +1,9 @@
-# A just for fun and dead bash scripting project :)
+# ⚠️ **ARCHIVED**
+This project is **no longer actively maintained**.
+
+---
+
+# A just for fun bash scripting project :)
 
 # Enso
 The Enlightenment software installer.<br>
